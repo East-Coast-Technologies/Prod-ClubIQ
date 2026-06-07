@@ -117,9 +117,13 @@ npm run build
 
 From the project root:
 
-```bash
+~~~bash
+cp .env.example .env
+cp Backend/.env.example Backend/.env
+cp Frontend/.env.example Frontend/.env
+
 docker compose up -d --build
-```
+~~~
 
 Check running containers:
 
