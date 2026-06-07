@@ -44,7 +44,6 @@ services:
       - "5000:5000"
     volumes:
       - ./Backend:/app
-    command: flask run --host=0.0.0.0 --port=5000
 
   # Frontend Service
   frontend:
