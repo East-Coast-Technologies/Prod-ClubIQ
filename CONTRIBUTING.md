@@ -76,7 +76,7 @@ tests/add-activity-tests
 
 ## Backend Setup
 
-From the project root:
+From the project root (requires Python 3.13; see `Backend/.python-version`):
 
 ```bash
 cd Backend
