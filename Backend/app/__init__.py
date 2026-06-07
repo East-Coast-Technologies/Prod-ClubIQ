@@ -40,6 +40,7 @@ def create_app(config_class=Config):
     from app.activities import activities_bp
     from app.invitations import invitation_bp
     from app.health.routes import health_bp
+    from app.api.v1.routes import api_v1_bp
     
     app.register_blueprint(members_bp)
     app.register_blueprint(auth_bp)
@@ -48,6 +49,8 @@ def create_app(config_class=Config):
     app.register_blueprint(activities_bp)
     app.register_blueprint(invitation_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(api_v1_bp)
+
 
     
     return app
