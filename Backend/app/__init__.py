@@ -11,7 +11,7 @@ import os
 
 # Initialize extensions outside the factory
 db = SQLAlchemy()
-api = Api()
+restful_api = Api()
 cors = CORS()
 mail = Mail()
 scheduler = APScheduler()
@@ -27,7 +27,7 @@ def create_app(config_class=Config):
     # Initialize extensions with the app instance
     db.init_app(app)
     migrate.init_app(app, db)
-    api.init_app(app)
+    restful_api.init_app(app)
     cors.init_app(app, supports_credentials=True)
     mail.init_app(app)
     scheduler.init_app(app)
