@@ -183,15 +183,13 @@ The current production target is `/api/v1`.
 
 v1 must stay simple:
 
-```text
+~~~text
 /api/v1/health
 /api/v1/auth
 /api/v1/members
-/api/v1/activities
-/api/v1/ratings
-/api/v1/club
-```
+~~~
 
+Additional v1 routes (e.g. `clubs`, `activities`, `ratings`) should be added incrementally as they are implemented and mounted under the v1 blueprint.
 Do not expose multi-club behavior in v1 unless approved.
 
 Do not expose local invitation routes in v1. Clerk handles authentication and invitations.
