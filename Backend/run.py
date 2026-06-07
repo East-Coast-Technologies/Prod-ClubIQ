@@ -1,4 +1,3 @@
-import os
 from app import create_app, db
 from app.models import User, Club, ClubMember, Activity, Invitation, Task, Rating
 from dotenv import load_dotenv

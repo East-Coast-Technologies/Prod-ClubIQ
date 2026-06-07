@@ -1,7 +1,7 @@
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from app import db
-from app.models import Activity, Club, User
+from app.models import Activity, Club
 
 
 def _parse_uuid(value):

@@ -1,7 +1,6 @@
 import uuid
-import pytest
 from app import db
-from app.models import User, Club, Activity
+from app.models import User, Activity
 
 
 def auth_header(token: str = "token") -> dict:
