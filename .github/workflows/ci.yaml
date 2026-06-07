@@ -1,6 +1,4 @@
----
 name: Club IQ CI
----
 
 on:
   push:
@@ -47,10 +45,10 @@ jobs:
 
       - name: Install Dependencies
         working-directory: Backend
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install pytest ruff
 
-      - name: Install pytest
-        run: pip install pytest
 
       - name: Run pytest
         working-directory: Backend
