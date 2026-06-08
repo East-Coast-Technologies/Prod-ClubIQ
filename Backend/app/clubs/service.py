@@ -1,5 +1,5 @@
 from uuid import UUID
-from flask import abort
+from flask import abort, current_app
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from app import db
@@ -30,6 +30,38 @@ class ClubService:
         if not club:
             abort(404)
         return club
+
+
+    @staticmethod
+    def get_v1_active_club():
+        """
+        Return the single active club for v1.
+
+        v1 is intentionally single-club.
+        The active club is controlled by backend config, not by frontend input.
+        """
+        single_club_id = current_app.config.get("SINGLE_CLUB_ID")
+
+        if not single_club_id:
+            return {
+                "error": "SINGLE_CLUB_ID is not configured"
+            }, 500
+
+        try:
+            club_uuid = UUID(str(single_club_id))
+        except ValueError:
+            return {
+                "error": "SINGLE_CLUB_ID is invalid"
+            }, 500
+
+        club = db.session.get(Club, club_uuid)
+        if not club:
+            return {
+                "error": "Configured club was not found"
+            }, 404
+
+        return ClubService._club_to_dict(club), 200
+
 
     @staticmethod
     def get_club(club_id):
