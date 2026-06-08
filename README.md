@@ -10,6 +10,9 @@
 <img src="https://img.shields.io/badge/License-MIT-green">
 <img src="https://img.shields.io/badge/Maintained-Yes-brightgreen.svg">
 <img src="https://img.shields.io/github/contributors/tomi3-11/ClubIQ">
+<a href="https://github.com/tomi3-11/ClubIQ/actions/workflows/ci.yaml">
+  <img src="https://github.com/tomi3-11/ClubIQ/actions/workflows/ci.yaml/badge.svg" alt="Club IQ CI">
+</a>
 </p>
 
 
@@ -74,7 +77,7 @@ Follow the steps as listed — skipping ahead is how people summon bugs from the
 
 ---
 
-# ✅ **Step 1 — Install Docker**
+# **Step 1 — Install Docker**
 We recommend installing **Docker Desktop** as it not only installs Docker Desktop but also the **Docker Engine, Docker CLI, and Docker Compose.**
 
 Download: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
@@ -90,7 +93,7 @@ After installation, make sure the **Docker Daemon / docker.service** is running 
 
 ---
 
-# ✅ **Step 2 — (Recommended) Setup Node in WSL using NVM**
+# **Step 2 — (Recommended) Setup Node in WSL using NVM**
 
 On Windows, use **WSL** for Node development or you’ll meet npm’s mood swings.
 
@@ -121,7 +124,7 @@ Paths must **not** point to Windows directories.
 
 ---
 
-# ✅ **Step 3 — Install Make**
+# **Step 3 — Install Make**
 
 The Makefile wraps common Docker commands. The utility is part of **GnuMake** so don't get alarmed if you don't see make by itself.
 
@@ -170,7 +173,7 @@ sudo nix.env -iA nixos.gnumake
 ```
 ---
 
-# ✅ **Step 4 — Creating the Containers**
+# **Step 4 — Creating the Containers**
 
 View the our [**Docker.md**](./Docker.md) file for the full installation steps.
 ### Build all services:
@@ -193,7 +196,7 @@ make up-detached
 
 ---
 
-# ✅ **Manual Setup**
+# **Manual Setup**
 
 If you want to setup the project without using Docker:
 
@@ -215,7 +218,7 @@ Environment variables live in `instance/.env`.
 
 ---
 
-# ✅ **Frontend Setup (Next.js)**
+# **Frontend Setup (Next.js)**
 
 ```bash
 cd Frontend
