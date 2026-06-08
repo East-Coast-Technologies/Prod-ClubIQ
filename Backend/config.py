@@ -11,6 +11,9 @@ class Config:
     CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
     CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
 
+    # v1 single-club configuration
+    SINGLE_CLUB_ID = os.environ.get("SINGLE_CLUB_ID")
+
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-hard-to-guess-string'
 
     # APScheduler configuration
