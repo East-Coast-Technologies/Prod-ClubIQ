@@ -12,7 +12,7 @@ class Config:
     CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
 
     # v1 single-club configuration
-    SINGLE_CLUB_ID = os.environ.get("SINGLE_CLUB_ID")
+    SINGLE_CLUB_NAME = os.environ.get("SINGLE_CLUB_NAME")
 
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-hard-to-guess-string'
 
