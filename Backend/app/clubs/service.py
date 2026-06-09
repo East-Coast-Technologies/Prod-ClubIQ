@@ -38,23 +38,17 @@ class ClubService:
         Return the single active club for v1.
 
         v1 is intentionally single-club.
-        The active club is controlled by backend config, not by frontend input.
+        The active club is controlled by backend config, not frontend input.
         """
-        single_club_id = current_app.config.get("SINGLE_CLUB_ID")
+        single_club_name = current_app.config.get("SINGLE_CLUB_NAME")
 
-        if not single_club_id:
+        if not single_club_name:
             return {
-                "error": "SINGLE_CLUB_ID is not configured"
+                "error": "SINGLE_CLUB_NAME is not configured"
             }, 500
 
-        try:
-            club_uuid = UUID(str(single_club_id))
-        except ValueError:
-            return {
-                "error": "SINGLE_CLUB_ID is invalid"
-            }, 500
+        club = Club.query.filter_by(name=single_club_name).first()
 
-        club = db.session.get(Club, club_uuid)
         if not club:
             return {
                 "error": "Configured club was not found"
