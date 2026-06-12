@@ -1,5 +1,5 @@
 from app import db
-from app.models import User, ClubMember
+from app.models import User, Club, ClubMember
 
 
 def auth_header(token: str = "test-token") -> dict:
