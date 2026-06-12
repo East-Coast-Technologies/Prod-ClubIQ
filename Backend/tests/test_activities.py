@@ -99,3 +99,97 @@ def test_list_activities(monkeypatch, client, app):
     assert list_resp.status_code == 200
     titles = [item["title"] for item in list_resp.get_json()]
     assert titles == ["Event2", "Event1"]
+
+
+def test_v1_create_activity_uses_configured_single_club(monkeypatch, client, app):
+    creator = create_user(
+        app,
+        "clerk_v1_act_creator",
+        "V1 Creator",
+        "v1creator@ex.com",
+        "v1creator",
+        role="admin",
+    )
+    active_club_name = "clubIQ Activity"
+    club_id = create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    resp = client.post(
+        "/api/v1/activities/",
+        json={"title": "V1 Movie Night", "description": "Single club event"},
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["Details"]["title"] == "V1 Movie Night"
+
+    with app.app_context():
+        activity = Activity.query.filter_by(title="V1 Movie Night").one()
+        assert activity.club_id == uuid.UUID(club_id)
+        assert activity.author_id == creator["id"]
+
+
+def test_v1_create_activity_rejects_client_club_id(monkeypatch, client, app):
+    creator = create_user(
+        app,
+        "clerk_v1_act_reject",
+        "V1 Reject",
+        "v1reject@ex.com",
+        "v1reject",
+        role="admin",
+    )
+    active_club_name = "clubIQ Reject"
+    configured_club_id = create_club(client, monkeypatch, creator, active_club_name)
+    other_club_id = create_club(client, monkeypatch, creator, "Other Club Reject")
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    resp = client.post(
+        "/api/v1/activities/",
+        json={"title": "Bad V1 Event", "club_id": other_club_id},
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["message"] == "club_id is not accepted in v1"
+
+    with app.app_context():
+        assert Activity.query.filter_by(title="Bad V1 Event").first() is None
+
+
+def test_v1_list_activities_uses_configured_single_club(monkeypatch, client, app):
+    creator = create_user(
+        app,
+        "clerk_v1_act_list",
+        "V1 List",
+        "v1list@ex.com",
+        "v1list",
+        role="admin",
+    )
+    active_club_name = "clubIQ List"
+    create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    client.post(
+        "/api/v1/activities/",
+        json={"title": "V1 Event 1"},
+        headers=auth_header(),
+    )
+    client.post(
+        "/api/v1/activities/",
+        json={"title": "V1 Event 2"},
+        headers=auth_header(),
+    )
+
+    set_token(monkeypatch, creator["clerk_id"])
+    list_resp = client.get("/api/v1/activities/", headers=auth_header())
+
+    assert list_resp.status_code == 200
+    titles = [item["title"] for item in list_resp.get_json()]
+    assert titles == ["V1 Event 2", "V1 Event 1"]

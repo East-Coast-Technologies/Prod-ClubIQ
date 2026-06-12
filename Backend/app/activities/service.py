@@ -14,7 +14,7 @@ def _parse_uuid(value):
 class ActivityService:
     # Removes author, to be implemented Some other time
     
-        @staticmethod
+    @staticmethod
     def _get_v1_active_club():
         """
         Resolve the single active club for v1.
