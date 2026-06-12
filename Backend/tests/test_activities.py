@@ -142,7 +142,8 @@ def test_v1_create_activity_rejects_client_club_id(monkeypatch, client, app):
         role="admin",
     )
     active_club_name = "clubIQ Reject"
-    configured_club_id = create_club(client, monkeypatch, creator, active_club_name)
+    #configured_club_id = create_club(client, monkeypatch, creator, active_club_name)
+    create_club(client, monkeypatch, creator, active_club_name)
     other_club_id = create_club(client, monkeypatch, creator, "Other Club Reject")
 
     app.config["SINGLE_CLUB_NAME"] = active_club_name
