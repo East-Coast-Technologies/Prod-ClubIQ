@@ -1,5 +1,5 @@
 from app import db
-from app.models import User
+from app.models import User, ClubMember
 
 
 def auth_header(token: str = "test-token") -> dict:
@@ -99,3 +99,120 @@ def test_protected_endpoint_allows_synced_user(monkeypatch, client, app):
     assert response.status_code == 200
     data = response.get_json()
     assert username in data["message"]
+
+
+def test_v1_auth_me_returns_user_club_and_member(monkeypatch, client, app):
+    with app.app_context():
+        user = User(
+            clerk_id="clerk_v1_auth_member",
+            name="V1 Auth Member",
+            email="v1authmember@example.com",
+            username="v1authmember",
+            role="user",
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        club = Club(
+            name="clubIQ Auth Context",
+            description="Configured v1 club",
+            created_by=user.id,
+        )
+        db.session.add(club)
+        db.session.commit()
+
+        membership = ClubMember(
+            club_id=club.id,
+            user_id=user.id,
+            role="member",
+        )
+        db.session.add(membership)
+        db.session.commit()
+
+        app.config["SINGLE_CLUB_NAME"] = club.name
+        user_id = user.id
+        club_id = str(club.id)
+        member_id = str(membership.id)
+
+    monkeypatch.setattr(
+        "app.auth.decorators.verify_clerk_token",
+        lambda token: {"sub": "clerk_v1_auth_member"},
+    )
+
+    response = client.get("/api/v1/auth/me", headers=auth_header())
+
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data["user"]["id"] == user_id
+    assert data["club"]["id"] == club_id
+    assert data["member"]["id"] == member_id
+    assert data["access"]["is_member"] is True
+    assert data["access"]["role"] == "member"
+
+
+def test_v1_auth_me_returns_no_member_for_synced_non_member(monkeypatch, client, app):
+    with app.app_context():
+        user = User(
+            clerk_id="clerk_v1_auth_non_member",
+            name="V1 Non Member",
+            email="v1nonmember@example.com",
+            username="v1nonmember",
+            role="user",
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        club = Club(
+            name="clubIQ Auth No Member",
+            description="Configured v1 club",
+            created_by=user.id,
+        )
+        db.session.add(club)
+        db.session.commit()
+
+        app.config["SINGLE_CLUB_NAME"] = club.name
+        user_id = user.id
+        club_id = str(club.id)
+
+    monkeypatch.setattr(
+        "app.auth.decorators.verify_clerk_token",
+        lambda token: {"sub": "clerk_v1_auth_non_member"},
+    )
+
+    response = client.get("/api/v1/auth/me", headers=auth_header())
+
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data["user"]["id"] == user_id
+    assert data["club"]["id"] == club_id
+    assert data["member"] is None
+    assert data["access"]["is_member"] is False
+    assert data["access"]["role"] is None
+
+
+def test_v1_auth_me_blocks_unsynced_user(monkeypatch, client):
+    monkeypatch.setattr(
+        "app.auth.decorators.verify_clerk_token",
+        lambda token: {"sub": "clerk_v1_auth_unknown"},
+    )
+
+    response = client.get("/api/v1/auth/me", headers=auth_header())
+
+    assert response.status_code == 403
+    assert response.get_json()["message"] == "User not synced"
+
+
+def test_v1_auth_me_does_not_accept_user_id_path(monkeypatch, client, app):
+    with app.app_context():
+        user = User.query.filter_by(clerk_id="clerk_admin").one()
+
+    monkeypatch.setattr(
+        "app.auth.decorators.verify_clerk_token",
+        lambda token: {"sub": user.clerk_id},
+    )
+
+    response = client.get("/api/v1/auth/me/1/", headers=auth_header())
+
+    assert response.status_code == 404
