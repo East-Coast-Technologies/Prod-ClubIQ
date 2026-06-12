@@ -2,7 +2,6 @@ from flask import g
 from flask_restful import Resource
 
 from app.auth.decorators import auth_required
-from app.auth.resources import SyncUserResource, TestAuthResource
 from app.auth.service import AuthService
 
 
