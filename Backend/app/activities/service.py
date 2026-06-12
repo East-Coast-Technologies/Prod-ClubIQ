@@ -1,4 +1,5 @@
 from uuid import UUID
+from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import Activity, Club
@@ -13,6 +14,60 @@ def _parse_uuid(value):
 class ActivityService:
     # Removes author, to be implemented Some other time
     
+        @staticmethod
+    def _get_v1_active_club():
+        """
+        Resolve the single active club for v1.
+
+        v1 does not accept club_id from the frontend.
+        The active club is controlled by SINGLE_CLUB_NAME.
+        """
+        single_club_name = current_app.config.get("SINGLE_CLUB_NAME")
+
+        if not single_club_name:
+            return None, {"message": "SINGLE_CLUB_NAME is not configured"}, 500
+
+        club = Club.query.filter_by(name=single_club_name).first()
+
+        if not club:
+            return None, {"message": "Configured club was not found"}, 404
+
+        return club, None, None
+
+    @staticmethod
+    def create_v1_activity(data, current_user):
+        """
+        Create an activity for the configured v1 club.
+
+        The frontend must not send club_id in v1.
+        """
+        data = data or {}
+
+        if "club_id" in data:
+            return {"message": "club_id is not accepted in v1"}, 400
+
+        club, error, status = ActivityService._get_v1_active_club()
+        if error:
+            return error, status
+
+        v1_data = {
+            **data,
+            "club_id": str(club.id),
+        }
+
+        return ActivityService.create_activity(v1_data, current_user)
+
+    @staticmethod
+    def list_v1_activities():
+        """
+        List activities for the configured v1 club.
+        """
+        club, error, status = ActivityService._get_v1_active_club()
+        if error:
+            return error, status
+
+        return ActivityService.list_activities(str(club.id))
+
     @staticmethod
     def create_activity(data, current_user):
         title = data.get("title")
