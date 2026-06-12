@@ -137,3 +137,103 @@ def test_delete_member_by_creator(monkeypatch, client, app):
 
     with app.app_context():
         assert db.session.get(ClubMember, uuid.UUID(membership_id)) is None
+
+
+def test_v1_create_member_uses_configured_single_club(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_member_creator", "V1 Creator", "v1creator@example.com", "v1creator")
+    target = create_user(app, "clerk_v1_member_target", "V1 Target", "v1target@example.com", "v1target")
+
+    active_club_name = "clubIQ Members"
+    club_id = create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    resp = client.post(
+        "/api/v1/members/",
+        json={"user_id": target["id"], "role": "member"},
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["role"] == "member"
+    assert body["club_id"] == club_id
+
+    with app.app_context():
+        membership = ClubMember.query.filter_by(
+            club_id=uuid.UUID(club_id),
+            user_id=target["id"],
+        ).one()
+        assert membership.role == "member"
+
+
+def test_v1_create_member_rejects_client_club_id(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_member_reject", "V1 Reject", "v1reject@example.com", "v1reject")
+    target = create_user(app, "clerk_v1_member_reject_target", "V1 Reject Target", "v1rejecttarget@example.com", "v1rejecttarget")
+
+    active_club_name = "clubIQ Members Reject"
+    create_club(client, monkeypatch, creator, active_club_name)
+    other_club_id = create_club(client, monkeypatch, creator, "Other Members Club")
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    resp = client.post(
+        "/api/v1/members/",
+        json={"club_id": other_club_id, "user_id": target["id"], "role": "member"},
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "club_id is not accepted in v1"
+
+    with app.app_context():
+        assert ClubMember.query.filter_by(user_id=target["id"]).first() is None
+
+
+def test_v1_list_members_uses_configured_single_club(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_member_list", "V1 List", "v1list@example.com", "v1list")
+    target = create_user(app, "clerk_v1_member_list_target", "V1 List Target", "v1listtarget@example.com", "v1listtarget")
+
+    active_club_name = "clubIQ Members List"
+    active_club_id = create_club(client, monkeypatch, creator, active_club_name)
+    other_club_id = create_club(client, monkeypatch, creator, "Other Members List")
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    client.post(
+        "/api/v1/members/",
+        json={"user_id": target["id"], "role": "member"},
+        headers=auth_header(),
+    )
+
+    # Legacy route creates a member in another club to prove v1 list is scoped.
+    add_member(client, monkeypatch, creator, other_club_id, creator["id"], role="member")
+
+    set_token(monkeypatch, creator["clerk_id"])
+    list_resp = client.get("/api/v1/members/", headers=auth_header())
+
+    assert list_resp.status_code == 200
+    payload = list_resp.get_json()
+    club_ids = {item["club_id"] for item in payload}
+    assert club_ids == {active_club_id}
+
+
+def test_v1_list_members_rejects_client_club_id_query(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_member_query", "V1 Query", "v1query@example.com", "v1query")
+
+    active_club_name = "clubIQ Members Query"
+    create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, creator["clerk_id"])
+    resp = client.get(
+        "/api/v1/members/?club_id=bad-client-club",
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "club_id query param is not accepted in v1"

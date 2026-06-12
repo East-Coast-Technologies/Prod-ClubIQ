@@ -1,4 +1,5 @@
 from uuid import UUID
+from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import ClubMember, Club, User
@@ -22,6 +23,66 @@ class MemberService:
             "role": member.role,
             "joined_at": member.joined_at.isoformat() if member.joined_at else None,
         }
+
+
+    @staticmethod
+    def _get_v1_active_club():
+        """
+        Resolve the single active club for v1.
+
+        v1 does not accept club_id from the frontend.
+        The active club is controlled by SINGLE_CLUB_NAME.
+        """
+        single_club_name = current_app.config.get("SINGLE_CLUB_NAME")
+
+        if not single_club_name:
+            return None, {"error": "SINGLE_CLUB_NAME is not configured"}, 500
+
+        club = Club.query.filter_by(name=single_club_name).first()
+
+        if not club:
+            return None, {"error": "Configured club was not found"}, 404
+
+        return club, None, None
+
+    @staticmethod
+    def list_v1_members(current_user, mine: bool = False):
+        """
+        List members for the configured v1 club only.
+        """
+        club, error, status = MemberService._get_v1_active_club()
+        if error:
+            return error, status
+
+        return MemberService.list_members(
+            current_user,
+            mine=mine,
+            club_id=str(club.id),
+        )
+
+    @staticmethod
+    def create_v1_member(data, current_user):
+        """
+        Create a member under the configured v1 club.
+
+        The frontend must not send club_id in v1.
+        """
+        data = data or {}
+
+        if "club_id" in data:
+            return {"error": "club_id is not accepted in v1"}, 400
+
+        club, error, status = MemberService._get_v1_active_club()
+        if error:
+            return error, status
+
+        v1_data = {
+            **data,
+            "club_id": str(club.id),
+        }
+
+        return MemberService.create_member(v1_data, current_user)
+
 
     @staticmethod
     def list_members(current_user, mine: bool = False, club_id=None):
