@@ -8,7 +8,8 @@ Responsibilities:
 """
 
 from app import db
-from app.models import User
+from flask import current_app
+from app.models import User, Club, ClubMember
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
@@ -129,7 +130,14 @@ class AuthService:
                 "name": club.name,
                 "description": club.description,
             },
-            "member": membership.to_dict() if membership else None,
+            "member": {
+            "id": str(membership.id),
+            "club_id": str(membership.club_id),
+            "user_id": membership.user_id,
+            "username": membership.user.username if membership.user else None,
+            "role": membership.role,
+            "joined_at": membership.joined_at.isoformat() if membership.joined_at else None,
+        } if membership else None,
             "access": {
                 "is_member": membership is not None,
                 "role": membership.role if membership else None,
