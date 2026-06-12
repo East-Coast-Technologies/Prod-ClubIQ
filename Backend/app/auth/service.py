@@ -92,3 +92,46 @@ class AuthService:
             "user": synced_user.to_dict(),
             "verified_via": "Clerk"
         }, 200
+
+
+    @staticmethod
+    def get_v1_auth_context(current_user: User):
+        """
+        Return the authenticated user's v1 app context.
+
+        v1 is single-club:
+        - user comes from Clerk-authenticated session
+        - club comes from SINGLE_CLUB_NAME
+        - membership is looked up inside that configured club
+        """
+        if not current_user:
+            return {"message": "User not synced"}, 403
+
+        single_club_name = current_app.config.get("SINGLE_CLUB_NAME")
+
+        if not single_club_name:
+            return {"message": "SINGLE_CLUB_NAME is not configured"}, 500
+
+        club = Club.query.filter_by(name=single_club_name).first()
+
+        if not club:
+            return {"message": "Configured club was not found"}, 404
+
+        membership = ClubMember.query.filter_by(
+            club_id=club.id,
+            user_id=current_user.id,
+        ).first()
+
+        return {
+            "user": current_user.to_dict(),
+            "club": {
+                "id": str(club.id),
+                "name": club.name,
+                "description": club.description,
+            },
+            "member": membership.to_dict() if membership else None,
+            "access": {
+                "is_member": membership is not None,
+                "role": membership.role if membership else None,
+            },
+        }, 200
