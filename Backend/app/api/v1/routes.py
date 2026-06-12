@@ -3,7 +3,7 @@ from flask import Blueprint
 from app.health.routes import create_health_blueprint
 from app.auth import create_auth_blueprint
 from app.members import create_members_blueprint
-from app.activities import create_activities_blueprint
+from app.activities import create_v1_activities_blueprint
 from app.rating import create_ratings_blueprint
 from app.clubs import create_v1_club_blueprint
 
@@ -34,7 +34,7 @@ api_v1_bp.register_blueprint(
 )
 
 api_v1_bp.register_blueprint(
-    create_activities_blueprint(
+    create_v1_activities_blueprint(
         name="activities_v1",
         url_prefix="/activities"
     )
