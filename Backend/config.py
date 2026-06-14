@@ -27,7 +27,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-hard-to-guess-string'
 
     # APScheduler configuration
-    SCHEDULER_API_ENABLED = True
+    SCHEDULER_API_ENABLED = env_bool("SCHEDULER_API_ENABLED", "false")
 
     # Mail configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
@@ -47,5 +47,7 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # in-memory SQLite for testing
     WTF_CSRF_ENABLED = False  # Disable CSRF for tests
     EXPOSE_LEGACY_API = True
+    SCHEDULER_API_ENABLED = False
+
     
     
