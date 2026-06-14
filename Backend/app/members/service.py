@@ -45,14 +45,65 @@ class MemberService:
 
         return club, None, None
 
+
+    @staticmethod
+    def _can_access_v1_club(current_user, club):
+        """
+        Return True when the current user can access v1 club data.
+
+        Allowed:
+        - configured club creator
+        - admin
+        - super_user
+        - member of configured club
+        """
+        if not current_user:
+            return False
+
+        if current_user.role in ["admin", "super_user"]:
+            return True
+
+        if club.created_by == current_user.id:
+            return True
+
+        membership = ClubMember.query.filter_by(
+            club_id=club.id,
+            user_id=current_user.id,
+        ).first()
+
+        return membership is not None
+
+    @staticmethod
+    def _get_v1_member_or_404(member_id, club):
+        """
+        Load a member only if the member belongs to the configured v1 club.
+        """
+        member_uuid = _parse_uuid(member_id)
+        if not member_uuid:
+            return None, ({"error": "Member not found"}, 404)
+
+        member = db.session.get(ClubMember, member_uuid)
+
+        if not member or member.club_id != club.id:
+            return None, ({"error": "Member not found"}, 404)
+
+        return member, None
+
+
     @staticmethod
     def list_v1_members(current_user, mine: bool = False):
         """
         List members for the configured v1 club only.
+
+        Synced users who are not part of the configured club cannot read
+        v1 club member data.
         """
         club, error, status = MemberService._get_v1_active_club()
         if error:
             return error, status
+
+        if not MemberService._can_access_v1_club(current_user, club):
+            return {"message": "User is not a member of the configured club"}, 403
 
         return MemberService.list_members(
             current_user,
