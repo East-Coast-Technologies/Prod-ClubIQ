@@ -194,3 +194,33 @@ def test_v1_list_activities_uses_configured_single_club(monkeypatch, client, app
     assert list_resp.status_code == 200
     titles = [item["title"] for item in list_resp.get_json()]
     assert titles == ["V1 Event 2", "V1 Event 1"]
+
+
+def test_v1_list_activities_blocks_synced_non_member(monkeypatch, client, app):
+    creator = create_user(
+        app,
+        "clerk_v1_act_owner",
+        "V1 Owner",
+        "v1owner@ex.com",
+        "v1owner",
+        role="admin",
+    )
+    outsider = create_user(
+        app,
+        "clerk_v1_act_outsider",
+        "V1 Outsider",
+        "v1outsider@ex.com",
+        "v1outsider",
+        role="user",
+    )
+
+    active_club_name = "clubIQ Activity Access"
+    create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, outsider["clerk_id"])
+    response = client.get("/api/v1/activities/", headers=auth_header())
+
+    assert response.status_code == 403
+    assert response.get_json()["message"] == "User is not a member of the configured club"
