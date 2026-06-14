@@ -15,16 +15,16 @@ class V1MemberResource(Resource):
 
     @auth_required()
     def get(self, member_id):
-        return MemberService.get_member(member_id)
+        return MemberService.get_v1_member(member_id, g.current_user)
 
     @auth_required()
     def put(self, member_id):
         data = request.get_json() or {}
-        return MemberService.update_member(member_id, data, g.current_user)
+        return MemberService.update_v1_member(member_id, data, g.current_user)
 
     @auth_required()
     def delete(self, member_id):
-        return MemberService.delete_member(member_id, g.current_user)
+        return MemberService.delete_v1_member(member_id, g.current_user)
 
 
 class V1MemberListResource(Resource):
