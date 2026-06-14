@@ -1,133 +1,175 @@
 # Invitations API
 
-Endpoints under `/api/invitations`. All requests require `Authorization: Bearer <Clerk session token>` and the caller must be synced (`g.current_user`).
+This document covers the v1 backend invitation decision for ClubIQ.
 
-## Roles & Access
-- Admin / Super User: can create, list, fetch, and delete/accept (accept only if email matches) for any club invitation.
-- Club Creator: can create and list invitations for clubs they created; can fetch invitations they issued; cannot see others' invitations.
-- Invitee: can fetch an invitation addressed to their email (via id) and accept it using the token endpoint.
+## v1 Status
 
-## Status Values
-`pending`, `in_progress`, `accepted` (enum `InvitationStatusEnum`). Tokens expire when `expires_at < now (UTC)`.
+ClubIQ v1 does not expose local backend invitation endpoints.
 
-## Endpoints
-| # | Method | Path | Description | Roles |
-|---|--------|------|-------------|-------|
-| 1 | POST | `/` | Create an invitation for a club member | admin, super_user, club creator |
-| 2 | GET | `/` | List invitations (filtered by status, scoped to inviter unless admin/super_user) | admin, super_user, inviter |
-| 3 | GET | `/<invite_id>` | Fetch a single invitation | admin, super_user, inviter, or invitee (email match) |
-| 4 | POST | `/<token>/accept` | Accept invitation and join club | invitee only (email match) |
+Invitation and sign-up access should be handled by Clerk.
 
-> Note: Paths above are relative to the blueprint prefix `/api/invitations`.
+The Flask backend is responsible for:
 
-## Common Query Params
-- `status` (optional, enum): filter list by `pending`, `in_progress`, `accepted`.
-
-## 1) Create invitation
-`POST /api/invitations/`
-
-Body:
-```json
-{
-  "email": "invitee@example.com",
-  "club_id": "a7c72fce-30c6-4d54-8c4f-9a2d9c0b8e27",
-  "expires_at": "2026-02-01T12:00:00"  // optional ISO-8601
-}
+```text
+- verifying Clerk authentication
+- syncing authenticated Clerk users into the local database
+- checking whether a synced user belongs to the configured club
+- blocking users who are not allowed to access v1 club data
 ```
-Rules:
-- Caller must be admin/super_user or the creator of the club.
-- `club_id` must be a valid club; `email` required.
-- `expires_at` must be ISO-8601 if provided.
 
-Success 201:
+## Not Exposed in v1
+
+These routes are intentionally not part of the v1 production API:
+
+```text
+/api/v1/invitations/
+/api/v1/invitations/<invite_id>
+/api/v1/invitations/<token>/accept
+```
+
+Do not build new v1 invitation endpoints in Flask.
+
+Do not expose the legacy invitation system under `/api/v1`.
+
+## Legacy Routes
+
+The legacy backend may still contain old invitation routes under:
+
+```text
+/api/invitations/
+```
+
+Those routes are not part of the v1 production API contract.
+
+In production, legacy APIs should be disabled with:
+
+```env
+EXPOSE_LEGACY_API=false
+```
+
+When legacy APIs are disabled, `/api/invitations/` is not exposed.
+
+## v1 Invitation Flow
+
+The v1 invitation flow should work like this:
+
+```text
+1. Admin/team owner invites the user through Clerk.
+2. Clerk sends the invitation or sign-up access link.
+3. User signs up or signs in through Clerk.
+4. Frontend gets a Clerk session token.
+5. Frontend calls POST /api/v1/auth/sync/.
+6. Backend syncs the authenticated Clerk user into the local database.
+7. Frontend calls GET /api/v1/auth/me.
+8. Backend returns the user's club membership/access context.
+9. If the user is a member of the configured club, they can access v1 club data.
+10. If the user is not a member of the configured club, protected club data endpoints return 403.
+```
+
+## Backend Responsibility
+
+The backend does not decide who receives Clerk invitations in v1.
+
+The backend only decides whether the authenticated and synced user can access the configured club.
+
+Allowed users:
+
+```text
+- member of the configured club
+- creator of the configured club
+- admin
+- super_user
+```
+
+Blocked users:
+
+```text
+- unsynced Clerk user
+- synced user who is not allowed inside the configured club
+```
+
+## Related v1 Endpoints
+
+Use these endpoints for the v1 auth and access flow:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/v1/auth/sync/` | Sync the signed-in Clerk user into the local DB |
+| GET | `/api/v1/auth/me` | Return current user, configured club, membership, and access context |
+| GET | `/api/v1/club/` | Return the configured single club |
+
+## Expected Access Behavior
+
+A synced user who is not a member can call:
+
+```text
+/api/v1/auth/me
+```
+
+That endpoint returns:
+
 ```json
 {
-  "message": "Invitation created",
-  "invitation": {
-    "id": "1e2f8a6a-dde4-4b8f-a5d8-6d2f3a4b1f3a",
-    "email": "invitee@example.com",
-    "club_id": "a7c72fce-30c6-4d54-8c4f-9a2d9c0b8e27",
-    "invited_by": 1,
-    "token": "<token>",
-    "status": "pending",
-    "created_at": "2026-01-02T09:00:00+00:00",
-    "expires_at": "2026-02-01T12:00:00"
+  "member": null,
+  "access": {
+    "is_member": false,
+    "role": null
   }
 }
 ```
-Error highlights: 400 invalid/missing fields or bad `expires_at`; 403 forbidden/unsynced; 404 club not found; 409 on DB constraint failures.
 
-## 2) List invitations
-`GET /api/invitations/?status=pending`
+But the same user cannot access protected club data endpoints such as:
 
-- Admin/Super User: sees all invitations.
-- Others: only invitations they issued (`invited_by` = current user id).
-
-Success 200:
-```json
-[
-  {
-    "id": "1e2f8a6a-dde4-4b8f-a5d8-6d2f3a4b1f3a",
-    "email": "invitee@example.com",
-    "club_id": "a7c72fce-30c6-4d54-8c4f-9a2d9c0b8e27",
-    "invited_by": 1,
-    "token": "<token>",
-    "status": "pending",
-    "created_at": "2026-01-02T09:00:00+00:00",
-    "expires_at": "2026-02-01T12:00:00"
-  }
-]
+```text
+/api/v1/activities/
+/api/v1/members/
 ```
 
-## 3) Get invitation by id
-`GET /api/invitations/<invite_id>`
+Those endpoints return:
 
-- Allowed if caller is admin/super_user, the inviter, or the invitee (email match).
-
-Success 200:
-```json
-{
-  "id": "1e2f8a6a-dde4-4b8f-a5d8-6d2f3a4b1f3a",
-  "email": "invitee@example.com",
-  "club_id": "a7c72fce-30c6-4d54-8c4f-9a2d9c0b8e27",
-  "invited_by": 1,
-  "token": "<token>",
-  "status": "pending",
-  "created_at": "2026-01-02T09:00:00+00:00",
-  "expires_at": "2026-02-01T12:00:00"
-}
+```text
+403 Forbidden
 ```
 
-## 4) Accept invitation
-`POST /api/invitations/<token>/accept`
+## Production Notes
 
-- Caller must be the invitee (token email must match caller email).
-- Invitation must be `pending` and not expired; club must still exist.
+Production should use:
 
-Success 200:
-```json
-{
-  "message": "Successfully joined the club",
-  "membership": {
-    "club_id": "a7c72fce-30c6-4d54-8c4f-9a2d9c0b8e27",
-    "user_id": 5,
-    "role": "member"
-  }
-}
+```env
+EXPOSE_LEGACY_API=false
+SCHEDULER_API_ENABLED=false
+SINGLE_CLUB_NAME=<real-production-club-name>
 ```
 
-Error highlights: 400 invalid/expired token or already used; 403 wrong user; 404 club not found; 409/500 DB errors.
+Before production deployment:
 
-## Notes
-- Tokens are URL-safe strings; store client-side as-is.
-- Email delivery failures are logged but do not block invitation creation (API still returns 201).
-- All dates use UTC.
+```text
+- confirm Clerk invitation/sign-up settings are configured
+- confirm the production club exists in the database
+- confirm SINGLE_CLUB_NAME matches the production club name
+- confirm users who should access the club have membership records
+- confirm /api/v1/invitations routes are not exposed
+```
+
+## v2 Notes
+
+If ClubIQ v2 reintroduces multi-club behavior, invitations can be redesigned under a v2 route surface, for example:
+
+```text
+/api/v2/invitations/
+/api/v2/clubs/<club_id>/invitations/
+```
+
+Do not add local invitation behavior back into `/api/v1`.
 
 ## Status Codes Quick Reference
-- 200: read/accept success
-- 201: created
-- 400: bad input/invalid token/duplicate member
-- 403: auth/role/email mismatch/unsynced user
-- 404: not found (club/invitation)
-- 409: DB constraint issues
-- 500: unexpected server error
+
+Because v1 does not expose invitation endpoints, there are no v1 invitation status codes.
+
+Expected route behavior:
+
+| Route | Expected Status |
+|---|---|
+| `/api/v1/invitations/` | 404 Not Found |
+| `/api/v1/invitations/<invite_id>` | 404 Not Found |
+| `/api/v1/invitations/<token>/accept` | 404 Not Found |
