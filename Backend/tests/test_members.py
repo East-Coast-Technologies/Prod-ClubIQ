@@ -237,3 +237,39 @@ def test_v1_list_members_rejects_client_club_id_query(monkeypatch, client, app):
 
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "club_id query param is not accepted in v1"
+
+
+def test_v1_list_members_blocks_synced_non_member(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_members_owner", "V1 Owner", "v1owner@example.com", "v1owner")
+    outsider = create_user(app, "clerk_v1_members_outsider", "V1 Outsider", "v1outsider@example.com", "v1outsider")
+
+    active_club_name = "clubIQ Member Access"
+    create_club(client, monkeypatch, creator, active_club_name)
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    set_token(monkeypatch, outsider["clerk_id"])
+    response = client.get("/api/v1/members/", headers=auth_header())
+
+    assert response.status_code == 403
+    assert response.get_json()["message"] == "User is not a member of the configured club"
+
+
+def test_v1_get_member_blocks_member_from_other_club(monkeypatch, client, app):
+    creator = create_user(app, "clerk_v1_member_scope_owner", "V1 Scope Owner", "v1scopeowner@example.com", "v1scopeowner")
+    target = create_user(app, "clerk_v1_member_scope_target", "V1 Scope Target", "v1scopetarget@example.com", "v1scopetarget")
+
+    active_club_name = "clubIQ Member Scope"
+    create_club(client, monkeypatch, creator, active_club_name)
+    other_club_id = create_club(client, monkeypatch, creator, "Other Member Scope")
+
+    app.config["SINGLE_CLUB_NAME"] = active_club_name
+
+    other_resp = add_member(client, monkeypatch, creator, other_club_id, target["id"], role="member")
+    assert other_resp.status_code == 201
+    other_membership_id = other_resp.get_json()["id"]
+
+    set_token(monkeypatch, creator["clerk_id"])
+    response = client.get(f"/api/v1/members/{other_membership_id}", headers=auth_header())
+
+    assert response.status_code == 404
