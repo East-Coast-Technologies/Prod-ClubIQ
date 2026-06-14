@@ -1,5 +1,15 @@
 import os
 
+
+def env_bool(name: str, default: str = "false") -> bool:
+    return os.environ.get(name, default).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -26,10 +36,16 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 
+    # Legacy API exposure
+    # true  = expose old /api/... routes for dev/backward compatibility
+    # false = expose only /api/v1/... routes for production
+    EXPOSE_LEGACY_API = env_bool("EXPOSE_LEGACY_API", "true")
+
 
 class TestingConfig(Config):
     Testing = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # in-memory SQLite for testing
     WTF_CSRF_ENABLED = False  # Disable CSRF for tests
+    EXPOSE_LEGACY_API = True
     
     
