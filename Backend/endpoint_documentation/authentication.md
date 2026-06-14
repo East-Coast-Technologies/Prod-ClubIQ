@@ -1,202 +1,383 @@
-# This covers the docs for the backend authentication usage
+# Authentication API
 
-## To be used by
-- Frontend contrubutors
-- maintainers
-- consumers of the API
+This document covers the v1 backend authentication endpoints for ClubIQ.
 
-## AUTH DETAIL
-BASE_URL: `api/auth/`
+## Base URL
 
-All auth endpoints require a valid Clerk session token:
-- Header: `Authorization: Bearer <Clerk session token>`
-- Content-Type: `application/json`
+```text
+/api/v1/auth
+```
 
-|id | Description | endpoint | method |
-|---|-------------|----------|--------|
-| 1 | Sync the signed-in Clerk user into the DB | `/sync/` | `POST` |
-| 2 | Get the user details by id | `/me/<int:id>/` | `GET` |
-| 3 | Test the auth routes working ( no core functionality) | `/test/` | `GET` |
+## Used By
 
+- Frontend contributors
+- Backend maintainers
+- API consumers
+- QA/testing contributors
 
-## Implementaion
-### Syncing User to the database
-`POST`: `http://127.0.0.1:5000/api/auth/sync/`
+## Auth Model
+
+ClubIQ uses Clerk for authentication.
+
+The frontend signs the user in through Clerk, gets a Clerk session token, and sends that token to the Flask backend.
+
+Every protected request must include:
+
+```http
+Authorization: Bearer <Clerk session token>
+Content-Type: application/json
+```
+
+The backend verifies the Clerk token and loads the synced local user.
+
+The frontend must not send `user_id` to identify the logged-in user. The backend resolves the current user from the verified Clerk token.
+
+## Endpoints at a Glance
+
+| # | Method | Endpoint | Description | Auth |
+|---|---|---|---|---|
+| 1 | POST | `/api/v1/auth/sync/` | Sync signed-in Clerk user into local DB | Required |
+| 2 | GET | `/api/v1/auth/me` | Get current user, active club, membership, and access context | Required |
+| 3 | GET | `/api/v1/auth/test/` | Test protected auth route | Required |
+
+## Not Used in v1
+
+The old user-id based profile route is not part of the v1 public contract:
+
+```text
+/api/v1/auth/me/<user_id>/
+```
+
+Use this instead:
+
+```text
+/api/v1/auth/me
+```
+
+## 1. Sync Current Clerk User
+
+```http
+POST /api/v1/auth/sync/
+```
+
+### Purpose
+
+Creates or updates the authenticated Clerk user in the local ClubIQ database.
+
+This endpoint is usually called after the user signs in.
+
+### Request Headers
+
+```http
+Authorization: Bearer <Clerk session token>
+Content-Type: application/json
+```
+
+### Request Body
 
 ```json
-
-
-
+{
+  "email": "member@example.com",
+  "name": "Club Member",
+  "username": "clubmember",
+  "role": "user"
+}
 ```
-Notes:
-- The backend verifies the Clerk token and overrides `clerk_id` from the token (client-supplied clerk_id is ignored).
-- Provide email/name/username/role; if already synced, the user is updated.
 
-Expected response: `200`
+### Important Rules
+
+- The backend verifies the Clerk token.
+- The backend gets `clerk_id` from the verified token.
+- Client-supplied `clerk_id` is ignored.
+- If the user does not exist locally, the backend creates the user.
+- If the user already exists locally, the backend updates their profile fields.
+- `email`, `name`, and `username` are required.
+- `role` defaults to `user` unless provided.
+
+### Success Response: Created
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
 
 ```json
 {
   "message": "User created successfully",
   "user": {
     "id": 1,
-    "clerk_id": "12342787shjhsd",
-    "name": "tom",
-    "email": "tom@test.com",
-    "username": "tom1",
-    "role": "admin",
+    "clerk_id": "user_123",
+    "name": "Club Member",
+    "email": "member@example.com",
+    "username": "clubmember",
+    "role": "user",
     "created_at": "2026-01-01T09:45:11.089007",
-    "updated_at": "2026-01-01T09:50:15.161471"
+    "updated_at": "2026-01-01T09:45:11.089007"
   },
   "verified_via": "Clerk"
 }
-
 ```
-If sent again, the user is updated.
+
+### Success Response: Updated
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
 
 ```json
 {
   "message": "User updated successfully",
   "user": {
     "id": 1,
-    "clerk_id": "12342787shjhsd",
-    "name": "tom",
-    "email": "tom@test.com",
-    "username": "tom1",
-    "role": "admin",
+    "clerk_id": "user_123",
+    "name": "Club Member",
+    "email": "member@example.com",
+    "username": "clubmember",
+    "role": "user",
     "created_at": "2026-01-01T09:45:11.089007",
-    "updated_at": "2026-01-01T09:50:15.161471"
+    "updated_at": "2026-01-01T10:12:48.901221"
   },
   "verified_via": "Clerk"
 }
-
 ```
-On duplicate constraints (email/username/clerk_id), a `409` may be returned with error details.
 
-### Get a single user detail
-`GET`: `http://127.0.0.1:5000/api/auth/me2/`
+### Common Errors
 
-Requires a valid Clerk token and the user to exist in the DB.
+| Status | Meaning |
+|---|---|
+| 400 | Missing required fields |
+| 401 | Authorization token missing or invalid |
+| 409 | Duplicate email, username, or Clerk ID conflict |
+| 500 | Unexpected server error |
 
-Expected response: `200`
+## 2. Get Current Auth Context
+
+```http
+GET /api/v1/auth/me
+```
+
+### Purpose
+
+Returns the authenticated user's current application context.
+
+This is the main v1 endpoint the frontend should call after sync.
+
+It returns:
+
+```text
+- current local user
+- configured active club
+- current membership in that club
+- access information
+```
+
+### Request Headers
+
+```http
+Authorization: Bearer <Clerk session token>
+```
+
+### Success Response: User Is a Club Member
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
+
 ```json
 {
-  "id": 2,
-  "clerk_id": "user_37elnRLAq6G6KjtQ0lU4Jcp4ZMV",
-  "email": "testuser@gmail.com",
-  "username": "testuser",
-  "role": "user",
-  "created_at": "2026-01-01T18:18:18.039582"
+  "user": {
+    "id": 1,
+    "clerk_id": "user_123",
+    "name": "Club Member",
+    "email": "member@example.com",
+    "username": "clubmember",
+    "role": "user",
+    "created_at": "2026-01-01T09:45:11.089007",
+    "updated_at": "2026-01-01T10:12:48.901221"
+  },
+  "club": {
+    "id": "2e1fefb4-8a32-421b-8eb3-16ff105fd972",
+    "name": "clubIQ",
+    "description": "Main production club"
+  },
+  "member": {
+    "id": "8c59e72b-b56d-4e49-bdb3-1763bb3ddc56",
+    "club_id": "2e1fefb4-8a32-421b-8eb3-16ff105fd972",
+    "user_id": 1,
+    "username": "clubmember",
+    "role": "member",
+    "joined_at": "2026-01-01T10:20:11.240421"
+  },
+  "access": {
+    "is_member": true,
+    "role": "member"
+  }
 }
-
 ```
 
-### testing the routes
-`GET`: `http://127.0.0.1:5000/api/auth/test/`
+### Success Response: Synced User Is Not a Club Member
 
-Requires a valid Clerk token and a synced user.
+Status:
+
+```text
+200 OK
+```
+
+Body:
 
 ```json
 {
-  "message": "Hello, testuser!"
+  "user": {
+    "id": 2,
+    "clerk_id": "user_456",
+    "name": "Non Member",
+    "email": "nonmember@example.com",
+    "username": "nonmember",
+    "role": "user",
+    "created_at": "2026-01-01T09:45:11.089007",
+    "updated_at": "2026-01-01T10:12:48.901221"
+  },
+  "club": {
+    "id": "2e1fefb4-8a32-421b-8eb3-16ff105fd972",
+    "name": "clubIQ",
+    "description": "Main production club"
+  },
+  "member": null,
+  "access": {
+    "is_member": false,
+    "role": null
+  }
 }
 ```
 
-Thats it folks.
+### Important Access Note
 
-For test purposes and token retrieval Replace the `App.tsx` and `main.tsx` with the content below.
+A synced user who is not a member can call `/api/v1/auth/me` to see their status.
 
-here are the sample implementation for the tests made in react, 
-```typescript
-// App.tsx
+But they cannot access protected club data such as:
 
-import './App.css';
-import { SignedIn, SignedOut, SignInButton, UserButton, useAuth, useUser } from '@clerk/clerk-react';
-import { useEffect } from 'react';
+```text
+/api/v1/activities/
+/api/v1/members/
+```
 
+Those endpoints return `403` when the synced user is not allowed inside the configured club.
 
-export default function App() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
+### Common Errors
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
+| Status | Meaning |
+|---|---|
+| 401 | Authorization token missing or invalid |
+| 403 | Clerk user is authenticated but not synced in local DB |
+| 404 | Configured club was not found |
+| 500 | `SINGLE_CLUB_NAME` is missing or unexpected server error |
 
-    const syncUser = async () => {
-      try {
-        const token = await getToken();
-        if (!token) {
-          console.warn('No Clerk token available');
-          return;
-        }
+## 3. Test Auth Route
 
-        // temporary for debugging
-        // console.log('Clerk Bearer token:', token);
+```http
+GET /api/v1/auth/test/
+```
 
-        const email = user.primaryEmailAddress?.emailAddress;
-        const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || user.id;
-        const username = user.username || email?.split('@')[0] || user.id;
+### Purpose
 
-        const res = await fetch('http://127.0.0.1:5000/api/auth/sync/', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            name,
-            username,
-            role: 'user',
-          }),
-        });
+Simple protected route used to confirm that auth middleware works.
 
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          console.error('Sync failed', res.status, body);
-          return;
-        }
-        console.log('Sync ok', body);
-      } catch (err) {
-        console.error('Sync error', err);
-      }
-    };
+### Request Headers
 
-    syncUser();
-  }, [getToken, isLoaded, isSignedIn, user]);
+```http
+Authorization: Bearer <Clerk session token>
+```
 
-  return (
-    <>
-      <SignedOut>
-        <SignInButton />
-      </SignedOut>
-      <SignedIn>
-        <UserButton />
-      </SignedIn>
-    </>
-  );
+### Success Response
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
+
+```json
+{
+  "message": "Hello, clubmember!"
 }
-
 ```
+
+### Common Errors
+
+| Status | Meaning |
+|---|---|
+| 401 | Authorization token missing or invalid |
+| 403 | User is not synced locally |
+
+## Frontend Example
+
+Example flow:
+
+```text
+1. User signs in with Clerk
+2. Frontend gets Clerk session token
+3. Frontend calls POST /api/v1/auth/sync/
+4. Frontend calls GET /api/v1/auth/me
+5. Frontend uses the returned access context to decide what to show
+```
+
+Example fetch:
 
 ```typescript
-// Main.tsx
+const token = await getToken();
 
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App.tsx';
-import { ClerkProvider } from '@clerk/clerk-react';
+const response = await fetch("http://127.0.0.1:5000/api/v1/auth/me", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
+});
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-if (!PUBLISHABLE_KEY) throw new Error('Add your Clerk Publishable Key to .env');
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <App />
-    </ClerkProvider>
-  </StrictMode>
-);
-
+const data = await response.json();
+console.log(data);
 ```
 
+## Production Notes
+
+Required backend env values:
+
+```env
+CLERK_SECRET_KEY=<production-clerk-secret>
+CLERK_ISSUER=<production-clerk-issuer>
+CLERK_JWKS_URL=<production-clerk-jwks-url>
+SINGLE_CLUB_NAME=<real-production-club-name>
+```
+
+Production should also use:
+
+```env
+EXPOSE_LEGACY_API=false
+SCHEDULER_API_ENABLED=false
+FLASK_DEBUG=false
+```
+
+## Status Codes Quick Reference
+
+| Status | Meaning |
+|---|---|
+| 200 | Successful sync, auth context read, or test response |
+| 400 | Bad request body |
+| 401 | Missing or invalid auth token |
+| 403 | Authenticated but not synced or not allowed |
+| 404 | Configured club not found |
+| 409 | Duplicate local user constraint |
+| 500 | Server/configuration error |
