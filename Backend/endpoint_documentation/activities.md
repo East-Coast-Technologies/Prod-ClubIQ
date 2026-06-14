@@ -1,99 +1,276 @@
 # Activities API
 
-Base URL: `/api/activities/`
+This document covers the v1 backend activities endpoints for ClubIQ.
 
-Auth
-- All endpoints require a valid Clerk session token.
-- Header: `Authorization: Bearer <Clerk session token>`
-- Content-Type: `application/json` for bodies.
+## Base URL
 
-IDs
-- `club_id` is a UUID (string in routes).
-- `activity_id` is a UUID (internal; not exposed in current routes except in responses).
+```text
+/api/v1/activities
+```
 
-Permissions
-- Create: club creator or roles `admin`/`super_user`.
-- List: any authenticated, synced user.
-- `auth_required` populates `g.current_user`; permissions are enforced in the service.
+## Auth
 
-## Endpoints at a glance
+All endpoints require a valid Clerk session token.
 
-| # | Endpoint | Method | Description | Auth | Notes |
-|---|----------|--------|-------------|------|-------|
-| 1 | `/create/` | POST | Create an activity | Required | Creator/admin/super_user only. Title+club_id required. |
-| 2 | `/<club_id>/` | GET | List activities for a club | Required | Ordered by `created_at` desc. |
+```http
+Authorization: Bearer <Clerk session token>
+Content-Type: application/json
+```
 
-## Create activity
-`POST /api/activities/create/`
+The backend verifies the Clerk token and loads the synced local user.
 
-Request body
+## v1 Single-Club Rule
+
+v1 is single-club only.
+
+The frontend must not send `club_id`.
+
+The backend resolves the active club using:
+
+```env
+SINGLE_CLUB_NAME=<club-name>
+```
+
+## Endpoints at a Glance
+
+| # | Method | Endpoint | Description | Auth |
+|---|---|---|---|---|
+| 1 | GET | `/api/v1/activities/` | List activities for the configured club | Required |
+| 2 | POST | `/api/v1/activities/` | Create an activity in the configured club | Required |
+
+## Not Used in v1
+
+These old multi-club route patterns are not part of the v1 public contract:
+
+```text
+/api/v1/activities/create/
+/api/v1/activities/<club_id>/
+```
+
+These request patterns are also rejected in v1:
+
 ```json
 {
-  "title": "Movie Night",
-  "description": "Watch films together",
-  "club_id": "e58b9984-ebfc-4308-9223-69944ece8c09"
+  "club_id": "client-provided-club-id"
 }
 ```
 
-Rules
-- `title` and `club_id` are required.
-- Caller must be club creator or have role `admin`/`super_user`.
-- Duplicate titles per club are rejected (400).
+If `club_id` is sent in the v1 create request body, the backend returns `400`.
 
-Responses
-- `201 Created`: success with activity payload
-- `400 Bad Request`: missing fields, invalid `club_id`, or duplicate title
-- `403 Forbidden`: insufficient permissions or unsynced user
-- `404 Not Found`: club not found
-- `409/500`: DB errors
+## Access Control
 
-Example success
+A synced user can access v1 activities only if they are allowed inside the configured club.
+
+Allowed users:
+
+```text
+- member of the configured club
+- creator of the configured club
+- admin
+- super_user
+```
+
+Blocked users:
+
+```text
+- synced but not a member of the configured club
+- unsynced Clerk user
+```
+
+Blocked users receive `403`.
+
+## 1. List Activities
+
+```http
+GET /api/v1/activities/
+```
+
+### Purpose
+
+Returns activities for the configured v1 club.
+
+The frontend does not provide a `club_id`.
+
+### Request Headers
+
+```http
+Authorization: Bearer <Clerk session token>
+```
+
+### Behavior
+
+- Backend reads `SINGLE_CLUB_NAME`.
+- Backend finds the configured club.
+- Backend checks that the synced user can access that club.
+- Backend returns activities for that club only.
+- Activities are ordered by `created_at` descending.
+
+### Success Response
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
+
+```json
+[
+  {
+    "id": "d7f9c3b4-4a59-49aa-942a-62fd69439c89",
+    "club_id": "e58b9984-ebfc-4308-9223-69944ece8c09",
+    "title": "Movie Night",
+    "description": "Watch films together",
+    "start_date": "2026-01-02T19:20:00",
+    "end_date": null,
+    "author_id": 1,
+    "created_at": "2026-01-02T19:20:00"
+  }
+]
+```
+
+### Common Errors
+
+| Status | Meaning |
+|---|---|
+| 401 | Authorization token missing or invalid |
+| 403 | User is not synced or cannot access the configured club |
+| 404 | Configured club was not found |
+| 500 | `SINGLE_CLUB_NAME` is missing or unexpected server error |
+
+## 2. Create Activity
+
+```http
+POST /api/v1/activities/
+```
+
+### Purpose
+
+Creates an activity under the configured v1 club.
+
+The frontend does not send `club_id`.
+
+### Request Headers
+
+```http
+Authorization: Bearer <Clerk session token>
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Movie Night",
+  "description": "Watch films together"
+}
+```
+
+### Required Fields
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `title` | string | Yes | Activity title |
+| `description` | string | No | Optional description |
+
+### Rejected Fields
+
+| Field | Reason |
+|---|---|
+| `club_id` | v1 resolves the active club from backend config |
+
+### Behavior
+
+- Backend reads `SINGLE_CLUB_NAME`.
+- Backend finds the configured club.
+- Backend injects the configured club id internally.
+- Backend creates the activity under that club.
+- Duplicate activity titles in the same club are rejected.
+
+### Success Response
+
+Status:
+
+```text
+201 Created
+```
+
+Body:
+
 ```json
 {
   "message": "Activity created successfully",
   "Details": {
-    "id": "d7f9c3b4-...",
+    "id": "d7f9c3b4-4a59-49aa-942a-62fd69439c89",
     "club_id": "e58b9984-ebfc-4308-9223-69944ece8c09",
     "title": "Movie Night",
     "description": "Watch films together",
-    "created_by": "creator_username",
-    "created_at": "2026-01-02T19:20:00Z",
-    "start_date": null
+    "start_date": "2026-01-02T19:20:00",
+    "end_date": null,
+    "author_id": 1,
+    "created_at": "2026-01-02T19:20:00"
   }
 }
 ```
 
-## List activities for a club
-`GET /api/activities/<club_id>/`
+### Error: Client Sends `club_id`
 
-Behavior
-- Validates `club_id` (UUID) and ensures club exists.
-- Returns activities sorted by `created_at` descending.
+Status:
 
-Responses
-- `200 OK`: array of activities (same shape as `Details` above)
-- `404 Not Found`: invalid or missing club
-
-Example
-```json
-[
-  {
-    "id": "a1b2c3...",
-    "club_id": "e58b9984-ebfc-4308-9223-69944ece8c09",
-    "title": "Event2",
-    "description": "",
-    "created_by": "creator_username",
-    "created_at": "2026-01-02T20:00:00Z",
-    "start_date": null
-  },
-  {
-    "id": "d7f9c3...",
-    "title": "Event1",
-    "description": "First event",
-    "club_id": "e58b9984-ebfc-4308-9223-69944ece8c09",
-    "created_by": "creator_username",
-    "created_at": "2026-01-02T19:20:00Z",
-    "start_date": null
-  }
-]
+```text
+400 Bad Request
 ```
+
+Body:
+
+```json
+{
+  "message": "club_id is not accepted in v1"
+}
+```
+
+### Common Errors
+
+| Status | Meaning |
+|---|---|
+| 400 | Missing title, duplicate title, or `club_id` was sent |
+| 401 | Authorization token missing or invalid |
+| 403 | User is not synced or cannot create activity in the configured club |
+| 404 | Configured club was not found |
+| 409 | Database constraint error |
+| 500 | `SINGLE_CLUB_NAME` is missing or unexpected server error |
+
+## Frontend Example
+
+```typescript
+const token = await getToken();
+
+const response = await fetch("http://127.0.0.1:5000/api/v1/activities/", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    title: "Movie Night",
+    description: "Watch films together",
+  }),
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## Status Codes Quick Reference
+
+| Status | Meaning |
+|---|---|
+| 200 | Activities returned successfully |
+| 201 | Activity created successfully |
+| 400 | Bad request body or rejected `club_id` |
+| 401 | Missing or invalid auth token |
+| 403 | Authenticated but not synced or not allowed |
+| 404 | Configured club not found |
+| 409 | Database constraint issue |
+| 500 | Server/configuration error |
