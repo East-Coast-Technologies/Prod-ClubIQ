@@ -244,12 +244,14 @@ Frontend runs on:
 
 ### Endpoint Documentation. All blueprints for backend
 
+- [V1](./Backend/endpoint_documentation/v1.md)
 - [Authentication](./Backend/endpoint_documentation/authentication.md)
 - [Clubs](./Backend/endpoint_documentation/clubs.md)
 - [Members](./Backend/endpoint_documentation/members.md)
 - [Activities](./Backend/endpoint_documentation/activities.md)
 - [Rating](./Backend/endpoint_documentation/ratings.md)
 - [Invitation](./Backend/endpoint_documentation/invitations.md)
+- [Health](./Backend/endpoint_documentation/health.md)
 
 
 
