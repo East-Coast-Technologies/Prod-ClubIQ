@@ -34,6 +34,37 @@ class ActivityService:
 
         return club, None, None
 
+
+    @staticmethod
+    def _can_access_v1_club(current_user, club):
+        """
+        Return True when the current user can access v1 club data.
+
+        Allowed:
+        - configured club creator
+        - admin
+        - super_user
+        - member of configured club
+        """
+        if not current_user:
+            return False
+
+        if current_user.role in ["admin", "super_user"]:
+            return True
+
+        if club.created_by == current_user.id:
+            return True
+
+        from app.models import ClubMember
+
+        membership = ClubMember.query.filter_by(
+            club_id=club.id,
+            user_id=current_user.id,
+        ).first()
+
+        return membership is not None
+
+
     @staticmethod
     def create_v1_activity(data, current_user):
         """
@@ -57,16 +88,26 @@ class ActivityService:
 
         return ActivityService.create_activity(v1_data, current_user)
 
+
+    ython
+
     @staticmethod
-    def list_v1_activities():
+    def list_v1_activities(current_user):
         """
         List activities for the configured v1 club.
+
+        Synced users who are not part of the configured club cannot read
+        v1 club activity data.
         """
         club, error, status = ActivityService._get_v1_active_club()
         if error:
             return error, status
 
+        if not ActivityService._can_access_v1_club(current_user, club):
+            return {"message": "User is not a member of the configured club"}, 403
+
         return ActivityService.list_activities(str(club.id))
+
 
     @staticmethod
     def create_activity(data, current_user):
