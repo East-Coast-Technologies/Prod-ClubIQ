@@ -136,6 +136,61 @@ class MemberService:
 
 
     @staticmethod
+    def get_v1_member(member_id, current_user):
+        """
+        Return a member only if it belongs to the configured v1 club
+        and the current user can access that club.
+        """
+        club, error, status = MemberService._get_v1_active_club()
+        if error:
+            return error, status
+
+        if not MemberService._can_access_v1_club(current_user, club):
+            return {"message": "User is not a member of the configured club"}, 403
+
+        member, err = MemberService._get_v1_member_or_404(member_id, club)
+        if err:
+            return err
+
+        return MemberService._member_to_dict(member), 200
+
+    @staticmethod
+    def update_v1_member(member_id, data, current_user):
+        """
+        Update a member only inside the configured v1 club.
+        """
+        data = data or {}
+
+        if "club_id" in data:
+            return {"error": "club_id is not accepted in v1"}, 400
+
+        club, error, status = MemberService._get_v1_active_club()
+        if error:
+            return error, status
+
+        member, err = MemberService._get_v1_member_or_404(member_id, club)
+        if err:
+            return err
+
+        return MemberService.update_member(str(member.id), data, current_user)
+
+    @staticmethod
+    def delete_v1_member(member_id, current_user):
+        """
+        Delete a member only inside the configured v1 club.
+        """
+        club, error, status = MemberService._get_v1_active_club()
+        if error:
+            return error, status
+
+        member, err = MemberService._get_v1_member_or_404(member_id, club)
+        if err:
+            return err
+
+        return MemberService.delete_member(str(member.id), current_user)
+
+
+    @staticmethod
     def list_members(current_user, mine: bool = False, club_id=None):
         query = ClubMember.query
 

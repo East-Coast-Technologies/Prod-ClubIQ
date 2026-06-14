@@ -89,8 +89,6 @@ class ActivityService:
         return ActivityService.create_activity(v1_data, current_user)
 
 
-    ython
-
     @staticmethod
     def list_v1_activities(current_user):
         """
