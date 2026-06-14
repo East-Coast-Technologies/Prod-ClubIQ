@@ -1,8 +1,9 @@
 from app import create_app
+from config import TestingConfig
 
 
 def _routes():
-    app = create_app()
+    app = create_app(TestingConfig)
     return {str(rule) for rule in app.url_map.iter_rules()}
 
 
