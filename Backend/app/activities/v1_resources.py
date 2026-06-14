@@ -17,7 +17,7 @@ class V1ActivityListResource(Resource):
 
     @auth_required()
     def get(self):
-        return ActivityService.list_v1_activities()
+        return ActivityService.list_v1_activities(g.current_user)
 
     @auth_required()
     def post(self):
