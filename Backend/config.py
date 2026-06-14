@@ -24,7 +24,7 @@ class Config:
     # v1 single-club configuration
     SINGLE_CLUB_NAME = os.environ.get("SINGLE_CLUB_NAME")
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-hard-to-guess-string'
+    SECRET_KEY = os.environ.get('SECRET_KEY') 
 
     # APScheduler configuration
     SCHEDULER_API_ENABLED = env_bool("SCHEDULER_API_ENABLED", "false")
@@ -44,6 +44,7 @@ class Config:
 
 class TestingConfig(Config):
     Testing = True
+    SECRET_KEY = "test-secret-key"
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # in-memory SQLite for testing
     WTF_CSRF_ENABLED = False  # Disable CSRF for tests
     EXPOSE_LEGACY_API = True
