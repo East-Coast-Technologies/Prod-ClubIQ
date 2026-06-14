@@ -1,125 +1,142 @@
-# Clubs API
+# Club API
 
-Base URL: `/api/clubs/`
+This document covers the v1 backend club endpoint for ClubIQ.
 
-All endpoints require a valid Clerk session token:
-- Header: `Authorization: Bearer <Clerk session token>`
-- Content-Type: `application/json` for endpoints with bodies
+## Base URL
 
-IDs
-- `club_id` is a UUID. Routes accept it as a string; it is parsed server-side. Invalid UUIDs return `404`.
-
-## Endpoints at a glance
-
-| # | Endpoint | Method | Description | Auth | Notes |
-|---|----------|--------|-------------|------|-------|
-| 1 | `/` | GET | List clubs | Required | Optional `mine` query to filter to the caller's clubs. |
-| 2 | `/` | POST | Create club | Required | Creates club and adds creator as `admin` member. Requires `name`. |
-| 3 | `/<club_id>` | GET | Get club by id | Required | Returns basic metadata. |
-| 4 | `/<club_id>` | PUT | Update club | Required | Only creator or roles `admin`/`super_user`. Name uniqueness enforced. |
-| 5 | `/<club_id>` | DELETE | Delete club | Required | Only creator or roles `admin`/`super_user`. Removes memberships first, then club. |
-
-## List clubs
-`GET /api/clubs/?mine={true|false}`
-
-Query params
-- `mine` (optional, default `false`): when `true`, non-admin users only see clubs they created or are a member of. Admin/super_user sees all regardless.
-
-Responses
-- `200 OK`: array of clubs
-
-```json
-[
-  {
-    "id": "a4e0f2b9-...",
-    "name": "Chess Club",
-    "description": "Board games and strategy",
-    "created_by": "alice",
-    "created_at": "2026-01-01T10:00:00Z",
-    "updated_at": "2026-01-02T10:00:00Z"
-  }
-]
+```text
+/api/v1/club
 ```
 
-## Create club
-`POST /api/clubs/`
+## Auth
 
-Request body
+All endpoints require a valid Clerk session token.
+
+```http
+Authorization: Bearer <Clerk session token>
+Content-Type: application/json
+```
+
+The backend verifies the Clerk token and loads the synced local user.
+
+## v1 Single-Club Rule
+
+v1 is single-club only.
+
+The frontend must not send `club_id`.
+
+The backend resolves the active club using:
+
+```env
+SINGLE_CLUB_NAME=<club-name>
+```
+
+## Endpoints at a Glance
+
+| # | Method | Endpoint | Description | Auth |
+|---|---|---|---|---|
+| 1 | GET | `/api/v1/club/` | Get the configured active club | Required |
+
+## Not Used in v1
+
+These old multi-club route patterns are not part of the v1 public contract:
+
+```text
+/api/v1/clubs/
+/api/v1/clubs/<club_id>
+```
+
+v1 does not expose public multi-club CRUD.
+
+Multi-club management is reserved for v2.
+
+## 1. Get Active Club
+
+```http
+GET /api/v1/club/
+```
+
+### Purpose
+
+Returns the configured single active club for v1.
+
+This endpoint lets the frontend know which club the v1 backend is currently serving.
+
+### Request Headers
+
+```http
+Authorization: Bearer <Clerk session token>
+```
+
+### Behavior
+
+- Backend reads `SINGLE_CLUB_NAME`.
+- Backend finds the matching club in the database.
+- Backend returns that club.
+- The frontend does not send `club_id`.
+
+### Success Response
+
+Status:
+
+```text
+200 OK
+```
+
+Body:
+
 ```json
 {
-  "name": "Chess Club",
-  "description": "Board games and strategy"
+  "id": "e58b9984-ebfc-4308-9223-69944ece8c09",
+  "name": "clubIQ",
+  "description": "Main production club"
 }
 ```
 
-Rules
-- `name` is required and must be unique.
-- Caller is recorded as `created_by` and is inserted into `clubmembers` with role `admin`.
+### Common Errors
 
-Responses
-- `201 Created`: on success
-- `400 Bad Request`: missing `name` or duplicate name
-- `409 Conflict`: DB constraint failure
+| Status | Meaning |
+|---|---|
+| 401 | Authorization token missing or invalid |
+| 403 | User is authenticated but not synced locally |
+| 404 | Configured club was not found |
+| 500 | `SINGLE_CLUB_NAME` is missing or unexpected server error |
 
-Example success
-```json
-{
-  "message": "Club created successfully",
-  "id": "a4e0f2b9-...",
-  "name": "Chess Club",
-  "description": "Board games and strategy",
-  "created_by": "alice",
-  "created_at": "2026-01-01T10:00:00Z",
-  "updated_at": "2026-01-01T10:00:00Z"
-}
+## Production Notes
+
+The production club is controlled by:
+
+```env
+SINGLE_CLUB_NAME=<real-production-club-name>
 ```
 
-## Get club by id
-`GET /api/clubs/<club_id>`
+Before production deployment, make sure the database contains a club with the same name.
 
-Responses
-- `200 OK`: club object (same shape as list)
-- `404 Not Found`: invalid or missing club
+Example:
 
-## Update club
-`PUT /api/clubs/<club_id>`
-
-Allowed fields
-- `name` (must remain unique)
-- `description`
-
-Permissions
-- Creator of the club, or users with role `admin` or `super_user`.
-
-Responses
-- `200 OK`: updated club
-- `400 Bad Request`: duplicate name
-- `403 Forbidden`: insufficient permissions
-- `404 Not Found`: invalid/missing club
-- `409 Conflict`/`500`: DB errors
-
-Example success
-```json
-{
-  "message": "Club updated successfully",
-  "id": "a4e0f2b9-...",
-  "name": "Chess & Go Club",
-  "description": "Board games and strategy",
-  "created_by": "alice",
-  "created_at": "2026-01-01T10:00:00Z",
-  "updated_at": "2026-01-02T12:00:00Z"
-}
+```env
+SINGLE_CLUB_NAME=clubIQ
 ```
 
-## Delete club
-`DELETE /api/clubs/<club_id>`
+The value must match the `clubs.name` value in the database.
 
-Behavior
-- Removes related memberships, then deletes the club.
-- Permissions: creator, `admin`, or `super_user`.
+## v2 Notes
 
-Responses
-- `200 OK`: `{ "message": "Club deleted successfully" }`
-- `403 Forbidden`: insufficient permissions
-- `404 Not Found`: invalid/missing club
-- `409 Conflict`/`500`: on DB errors
+v2 can reintroduce multi-club APIs using a separate versioned route surface, for example:
+
+```text
+/api/v2/clubs/
+/api/v2/clubs/<club_id>
+```
+
+Do not add multi-club behavior back into `/api/v1`.
+
+## Status Codes Quick Reference
+
+| Status | Meaning |
+|---|---|
+| 200 | Configured club returned successfully |
+| 401 | Missing or invalid auth token |
+| 403 | Authenticated but not synced |
+| 404 | Configured club not found |
+| 500 | Server/configuration error |
