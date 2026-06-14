@@ -53,7 +53,7 @@ Body:
 
 ```json
 {
-  "status": "healthy"
+  "message": "It feels good up here"
 }
 ```
 
@@ -84,7 +84,7 @@ Expected output:
 
 ```json
 {
-  "status": "healthy"
+  "message": "It feels good up here"
 }
 ```
 
@@ -92,5 +92,5 @@ Expected output:
 
 | Status | Meaning |
 |---|---|
-| 200 | Backend is healthy |
+| 200 | Backend is reachable |
 | 500 | Backend is unhealthy |
