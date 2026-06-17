@@ -25,8 +25,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 3
+      start_period: 10s
 
   # Frontend Service
   frontend:
@@ -51,8 +51,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 3
+      start_period: 10s
 
   ############################################################
   # Services with only images
@@ -77,7 +77,7 @@ services:
         ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 10s
 
   # Reverse Proxy
@@ -104,8 +104,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 3
+      start_period: 10s
 
 ############################################################
 # Volumes and Networks
