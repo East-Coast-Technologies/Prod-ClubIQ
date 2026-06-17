@@ -8,26 +8,25 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install system dependencies for psycopg2 and others
-RUN apt-get update && apt-get install -y netcat-traditional \
+RUN apt-get update && apt-get install -y \
     build-essential postgresql-client curl \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for caching)
-COPY Backend/requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy app source code
-COPY Backend/ .
+COPY . .
 
-# Copy entrypoint
-COPY Backend/entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+# Remove carriage return characters and make entrypoint.sh executable
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose Flask dev port
 EXPOSE 5000
 
 # Default command
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]

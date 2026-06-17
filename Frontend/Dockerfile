@@ -7,12 +7,15 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
+# Install gcompat for compatibility with Alpine Linux
+RUN apk add --no-cache gcompat
+
 # Install dependencies first (for better caching)
-COPY Frontend/package*.json ./
+COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
 # Copy project files
-COPY Frontend/ .
+COPY . .
 
 # Expose Next.js dev port
 EXPOSE 3000
