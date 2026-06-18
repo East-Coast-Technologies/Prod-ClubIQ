@@ -96,16 +96,6 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --spider http://localhost/nginx-health || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
 ############################################################
 # Volumes and Networks
