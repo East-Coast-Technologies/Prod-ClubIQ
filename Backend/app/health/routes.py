@@ -28,22 +28,36 @@ def create_health_blueprint(name="health", url_prefix="/health"):
     bp = Blueprint(name, __name__, url_prefix=url_prefix)
     api = Api(bp)
 
-    api.add_resource(HealthResource, "/")
+    api.add_resource(HealthResource, "", "/")
 
     return bp
 
 
-# Legacy blueprint combining Docker Compose liveness probes and legacy API health.
-# Keep this temporarily so existing tests/routes do not break while v1 is added.
-health_bp = Blueprint("health", __name__)
-api = Api(health_bp)
+def create_backend_liveness_blueprint(name="backend_liveness"):
+    """
+    Docker Compose backend liveness probe routes.
 
-api.add_resource(
-    HealthResource,
-    "/api/health",
-    "/api/health/",
-    "/backend-health",
-    "/backend-health/",
-    "/api/backend-health",
-    "/api/backend-health/",
-)
+    These routes must stay available even when legacy /api/... routes are disabled
+    in production via EXPOSE_LEGACY_API=false.
+    """
+    bp = Blueprint(name, __name__)
+    api = Api(bp)
+
+    api.add_resource(
+        HealthResource,
+        "/backend-health",
+        "/backend-health/",
+        "/api/backend-health",
+        "/api/backend-health/",
+    )
+
+    return bp
+
+
+# Docker Compose liveness probe blueprint.
+backend_liveness_bp = create_backend_liveness_blueprint()
+
+
+# Legacy blueprint.
+# Keep this temporarily so existing tests/routes do not break while v1 is added.
+health_bp = create_health_blueprint(name="health", url_prefix="/api/health")

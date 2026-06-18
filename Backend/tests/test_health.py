@@ -1,3 +1,11 @@
+from app import create_app
+from config import TestingConfig
+
+
+class LegacyDisabledTestingConfig(TestingConfig):
+    EXPOSE_LEGACY_API = False
+
+
 def test_health_endpoints_hybrid_response(client):
     """
     Test that all the different iterations of health routes (legacy, Docker, v1)
@@ -23,3 +31,16 @@ def test_health_endpoints_hybrid_response(client):
         assert resp.get_json() == expected_json, (
             f"Endpoint {endpoint} returned unexpected JSON: {resp.get_json()}"
         )
+
+
+def test_backend_liveness_route_stays_available_when_legacy_api_disabled():
+    app = create_app(LegacyDisabledTestingConfig)
+    client = app.test_client()
+
+    resp = client.get("/api/backend-health")
+
+    assert resp.status_code == 200
+    assert resp.get_json() == {
+        "status": "healthy",
+        "message": "It feels good up here",
+    }

@@ -31,7 +31,10 @@ def test_legacy_api_routes_can_be_disabled_for_production():
     assert "/api/members/" not in routes
     assert "/api/activities/create/" not in routes
     assert "/api/invitations/" not in routes
+    assert "/api/health/" not in routes
 
+    assert "/api/backend-health" in routes
+    assert "/api/backend-health/" in routes
     assert "/api/v1/health/" in routes
     assert "/api/v1/auth/sync/" in routes
     assert "/api/v1/auth/me" in routes
