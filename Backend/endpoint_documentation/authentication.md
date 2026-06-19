@@ -1,5 +1,37 @@
 # Authentication API
 
+<!--toc:start-->
+- [Authentication API](#authentication-api)
+  - [Base URL](#base-url)
+  - [Used By](#used-by)
+  - [Auth Model](#auth-model)
+  - [Endpoints at a Glance](#endpoints-at-a-glance)
+  - [Not Used in v1](#not-used-in-v1)
+  - [1. Sync Current Clerk User](#1-sync-current-clerk-user)
+    - [Purpose](#purpose)
+    - [Request Headers](#request-headers)
+    - [Request Body](#request-body)
+    - [Important Rules](#important-rules)
+    - [Success Response: Created](#success-response-created)
+    - [Success Response: Updated](#success-response-updated)
+    - [Common Errors](#common-errors)
+  - [2. Get Current Auth Context](#2-get-current-auth-context)
+    - [Purpose](#purpose-1)
+    - [Request Headers](#request-headers-1)
+    - [Success Response: User Is a Club Member](#success-response-user-is-a-club-member)
+    - [Success Response: Synced User Is Not a Club Member](#success-response-synced-user-is-not-a-club-member)
+    - [Important Access Note](#important-access-note)
+    - [Common Errors](#common-errors-1)
+  - [3. Test Auth Route](#3-test-auth-route)
+    - [Purpose](#purpose-2)
+    - [Request Headers](#request-headers-2)
+    - [Success Response](#success-response)
+    - [Common Errors](#common-errors-2)
+  - [Frontend Example](#frontend-example)
+  - [Production Notes](#production-notes)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers the v1 backend authentication endpoints for ClubIQ.
 
 ## Base URL

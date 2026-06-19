@@ -1,5 +1,19 @@
 # Health API
 
+<!--toc:start-->
+- [Health API](#health-api)
+  - [Base URL](#base-url)
+  - [Auth](#auth)
+  - [Endpoints at a Glance](#endpoints-at-a-glance)
+  - [Response](#response)
+    - [Purpose](#purpose)
+    - [Request Headers](#request-headers)
+    - [Common Errors](#common-errors)
+  - [Production Notes](#production-notes)
+  - [Monitoring Examples](#monitoring-examples)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers backend health and liveness endpoints for ClubIQ.
 
 ## Base URL
