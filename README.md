@@ -11,17 +11,15 @@
 <img src="https://img.shields.io/badge/Maintained-Yes-brightgreen.svg">
 <img src="https://img.shields.io/github/contributors/tomi3-11/ClubIQ">
 <a href="https://github.com/tomi3-11/ClubIQ/actions/workflows/ci.yaml">
-  <img src="https://github.com/tomi3-11/ClubIQ/actions/workflows/ci.yaml/badge.svg" alt="Club IQ CI">
+<img src="https://github.com/tomi3-11/ClubIQ/actions/workflows/ci.yaml/badge.svg" alt="Club IQ CI">
 </a>
 </p>
-
-
 
 ---
 
 # **Overview**
 
-**Club IQS** is a full-stack platform for managing clubs: members, events, attendance, authentication, and more.
+**Club IQ** is a full-stack platform for managing clubs: members, events, attendance, authentication, and more.
 
 It includes:
 
@@ -36,14 +34,30 @@ It includes:
 
 # **Table of Contents**
 
-1. [Project Structure](#project-structure)
-2. [Setup & Installation](#setup--installation)
-3. [Backend Guide](#backend-setup)
-4. [Frontend Guide](#frontend-setup)
-5. [API Reference](#api-reference)
-6. [Testing](#testing)
-7. [Contribution Guide](#contribution-guide)
-8. [License](#license)
+<!--toc:start-->
+- [**Club IQ**](#club-iq)
+- [**Overview**](#overview)
+- [**Table of Contents**](#table-of-contents)
+- [**Project Structure**](#project-structure)
+- [**Setup & Installation**](#setup-installation)
+- [**Step 1 — Install Docker**](#step-1-install-docker)
+- [**Step 2 — (Recommended) Setup Node in WSL using NVM**](#step-2-recommended-setup-node-in-wsl-using-nvm)
+    - [Install NVM](#install-nvm)
+    - [Install Node (LTS)](#install-node-lts)
+    - [Verify WSL paths](#verify-wsl-paths)
+- [**Step 3 — Install Make**](#step-3-install-make)
+- [**Step 4 — Creating the Containers**](#step-4-creating-the-containers)
+    - [Build all services:](#build-all-services)
+    - [Run containers (attached):](#run-containers-attached)
+    - [Detached mode:](#detached-mode)
+- [**Manual Setup**](#manual-setup)
+- [**Frontend Setup (Next.js)**](#frontend-setup-nextjs)
+- [**API Reference**](#api-reference)
+    - [Base URLs](#base-urls)
+    - [Endpoint Documentation. All blueprints for backend](#endpoint-documentation-all-blueprints-for-backend)
+- [**Contribution Guide**](#contribution-guide)
+- [**License**](#license)
+<!--toc:end-->
 
 ---
 
@@ -51,21 +65,26 @@ It includes:
 
 ```
 ClubIQ/
-│── Backend/
-│   ├── app/
-│   ├── instance/
-│   ├── Config.py
+├── Backend/
+│   ├── Dockerfile
+│   ├── entrypoint.sh
 │   ├── requirements.txt
+│   ├── backend.env.example
+│   └── app/
+│       ├── models.py
+│       └── ...
 │
-│── Frontend/
-│   ├── app/
+├── Frontend/
+│   ├── Dockerfile
 │   ├── package.json
-│   ├── next.config.mjs
+│   ├── frontend.env.example
+│   └── src/
 │
-│── docker-compose.yml
-│── Makefile
-│── README.md
-│── .gitignore
+├── .env.example
+├── docker-compose.yml
+├── Makefile
+├── .dockerignore
+└── Docker.md
 ```
 
 ---
@@ -126,51 +145,10 @@ Paths must **not** point to Windows directories.
 
 # **Step 3 — Install Make**
 
-The Makefile wraps common Docker commands. The utility is part of **GnuMake** so don't get alarmed if you don't see make by itself.
+`gnu make` is optional but we highly recommend installing it.
 
-## Windows
+Install it by either visiting the [official Make website](https://www.gnu.org/software/make/) or using your package manager.
 
-Download and install the make utility from: [SourceForge](https://sourceforge.net/projects/gnuwin32/files/make/3.81/make-3.81.exe/download?use_mirror=yer&download)
-
-Add to PATH, then verify:
-
-```bash
-make --version
-```
-
-## Linux / macOS
-
-Install the make utility via your distro's package manager. For instance:
-
-* macOS:
-
-```bash
-brew install make
-```
-
-* Debian / Ubuntu:
-
-```bash
-sudo apt install make
-```
-
-* Fedora:
-
-```bash
-sudo dnf install make
-```
-
-* Arch Linux:
-
-```bash
-sudo pacman -S make
-```
-
-* NixOS:
-
-```bash
-sudo nix.env -iA nixos.gnumake
-```
 ---
 
 # **Step 4 — Creating the Containers**
@@ -214,7 +192,9 @@ pip install -r requirements.txt
 flask run
 ```
 
-Environment variables live in `instance/.env`.
+Environment variables are read from the process environment.
+
+For Docker workflows, use `Backend/backend.env` and `Frontend/frontend.env` (see [Docker Guide](./Docker.md)).
 
 ---
 
@@ -222,7 +202,6 @@ Environment variables live in `instance/.env`.
 
 ```bash
 cd Frontend
-
 npm install
 npm run dev
 ```
@@ -253,53 +232,14 @@ Frontend runs on:
 - [Invitation](./Backend/endpoint_documentation/invitations.md)
 - [Health](./Backend/endpoint_documentation/health.md)
 
-
+---
 
 # **Contribution Guide**
 
-The workflow is centered around **cloning main first**.
----
-
-## **Developer Workflow (Contributor-First)**
-
-### **1. Fork the repository**
-> **NOTE** : __Fork the repository then clone it from your side__. <br>
-> For better practices, **DON'T** clone the repository directly from here...
-
-```bash
-git clone https://github.com/USIU-ClubIQ/ClubIQ.git
-cd ClubIQ
-```
-
-### **2. Switch to main and pull latest**
-
-```bash
-git checkout main
-git pull origin main
-```
-
-### **3. Create a feature branch**
-
-```bash
-git checkout -b feature/<task-name>
-```
-
-### **4. Work → Commit → Push**
-
-```bash
-git add .
-git commit -m "Implement <feature>"
-git push origin feature/<task-name>
-```
-
-### **5. Open a Pull Request**
-
-* PR from your `feature/<task-name>` → `main`
-* Add a short description
-* Assign team lead
+All contributions are welcome! But kindly follow the [contribution guidelines](./CONTRIBUTING.md).
 
 ---
 
 # **License**
 
-MIT License.
+[MIT License.](./LICENSE)

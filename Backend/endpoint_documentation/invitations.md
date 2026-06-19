@@ -1,5 +1,19 @@
 # Invitations API
 
+<!--toc:start-->
+- [Invitations API](#invitations-api)
+  - [v1 Status](#v1-status)
+  - [Not Exposed in v1](#not-exposed-in-v1)
+  - [Legacy Routes](#legacy-routes)
+  - [v1 Invitation Flow](#v1-invitation-flow)
+  - [Backend Responsibility](#backend-responsibility)
+  - [Related v1 Endpoints](#related-v1-endpoints)
+  - [Expected Access Behavior](#expected-access-behavior)
+  - [Production Notes](#production-notes)
+  - [v2 Notes](#v2-notes)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers the v1 backend invitation decision for ClubIQ.
 
 ## v1 Status

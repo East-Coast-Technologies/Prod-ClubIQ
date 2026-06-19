@@ -1,5 +1,23 @@
 # Club API
 
+<!--toc:start-->
+- [Club API](#club-api)
+  - [Base URL](#base-url)
+  - [Auth](#auth)
+  - [v1 Single-Club Rule](#v1-single-club-rule)
+  - [Endpoints at a Glance](#endpoints-at-a-glance)
+  - [Not Used in v1](#not-used-in-v1)
+  - [1. Get Active Club](#1-get-active-club)
+    - [Purpose](#purpose)
+    - [Request Headers](#request-headers)
+    - [Behavior](#behavior)
+    - [Success Response](#success-response)
+    - [Common Errors](#common-errors)
+  - [Production Notes](#production-notes)
+  - [v2 Notes](#v2-notes)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers the v1 backend club endpoint for ClubIQ.
 
 ## Base URL

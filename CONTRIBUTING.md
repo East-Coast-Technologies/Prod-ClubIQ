@@ -1,5 +1,27 @@
 # Contributing to ClubIQ
 
+<!--toc:start-->
+- [Contributing to ClubIQ](#contributing-to-clubiq)
+  - [Project Structure](#project-structure)
+  - [Development Rules](#development-rules)
+  - [Branch Naming](#branch-naming)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+  - [Docker Setup](#docker-setup)
+  - [Backend Contribution Guidelines](#backend-contribution-guidelines)
+  - [API Versioning Rules](#api-versioning-rules)
+  - [Backend Testing](#backend-testing)
+  - [Database and Migrations](#database-and-migrations)
+  - [Authentication Rules](#authentication-rules)
+  - [Pull Request Checklist](#pull-request-checklist)
+  - [Commit Message Style](#commit-message-style)
+  - [Code Review Expectations](#code-review-expectations)
+  - [Documentation](#documentation)
+  - [Security](#security)
+  - [Reporting Issues](#reporting-issues)
+  - [Production Focus](#production-focus)
+<!--toc:end-->
+
 Thanks for your interest in contributing to ClubIQ.
 
 ClubIQ is a smart club management system built as a monorepo with a Flask backend and a Next.js frontend.
@@ -119,8 +141,8 @@ From the project root:
 
 ~~~bash
 cp .env.example .env
-cp Backend/.env.example Backend/.env
-cp Frontend/.env.example Frontend/.env
+cp Backend/backend.env.example Backend/backend.env
+cp Frontend/frontend.env.example Frontend/frontend.env
 
 docker compose up -d --build
 ~~~

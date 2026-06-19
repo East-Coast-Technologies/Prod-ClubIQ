@@ -1,5 +1,46 @@
 # Ratings API
 
+<!--toc:start-->
+- [Ratings API](#ratings-api)
+  - [Base URL](#base-url)
+  - [Auth](#auth)
+  - [v1 Notes](#v1-notes)
+  - [Roles](#roles)
+  - [Endpoints at a Glance](#endpoints-at-a-glance)
+  - [Query Params](#query-params)
+  - [1. List Ratings for a Task](#1-list-ratings-for-a-task)
+    - [Purpose](#purpose)
+    - [Request Headers](#request-headers)
+    - [Roles](#roles-1)
+    - [Example Request](#example-request)
+    - [Success Response](#success-response)
+    - [Common Errors](#common-errors)
+  - [2. Create Rating for a Task](#2-create-rating-for-a-task)
+    - [Purpose](#purpose-1)
+    - [Request Headers](#request-headers-1)
+    - [Roles](#roles-2)
+    - [Request Body](#request-body)
+    - [Required Fields](#required-fields)
+    - [Important Rules](#important-rules)
+    - [Success Response](#success-response-1)
+    - [Common Errors](#common-errors-1)
+  - [3. List Ratings for a User](#3-list-ratings-for-a-user)
+    - [Purpose](#purpose-2)
+    - [Request Headers](#request-headers-2)
+    - [Roles](#roles-3)
+    - [Example Request](#example-request-1)
+    - [Success Response](#success-response-2)
+    - [Common Errors](#common-errors-2)
+  - [4. Delete Rating](#4-delete-rating)
+    - [Purpose](#purpose-3)
+    - [Request Headers](#request-headers-3)
+    - [Roles](#roles-4)
+    - [Success Response](#success-response-3)
+    - [Common Errors](#common-errors-3)
+  - [Frontend Example: List Task Ratings](#frontend-example-list-task-ratings)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers the v1 backend task ratings endpoints for ClubIQ.
 
 ## Base URL
