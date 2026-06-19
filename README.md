@@ -80,7 +80,6 @@ ClubIQ/
 │   ├── frontend.env.example
 │   └── src/
 │
-├── .env.example
 ├── docker-compose.yml
 ├── Makefile
 ├── .dockerignore

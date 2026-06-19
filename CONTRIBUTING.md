@@ -140,7 +140,6 @@ npm run build
 From the project root:
 
 ~~~bash
-cp .env.example .env
 cp Backend/backend.env.example Backend/backend.env
 cp Frontend/frontend.env.example Frontend/frontend.env
 
