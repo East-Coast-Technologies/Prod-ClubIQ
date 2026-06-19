@@ -388,10 +388,11 @@ console.log(data);
 Required backend env values:
 
 ```env
-CLERK_SECRET_KEY=<production-clerk-secret>
-CLERK_ISSUER=<production-clerk-issuer>
-CLERK_JWKS_URL=<production-clerk-jwks-url>
-SINGLE_CLUB_NAME=<real-production-club-name>
+CLERK_ISSUER=https://...
+CLERK_AUDIENCE=https://...
+CLERK_FRONTEND_API=https://...
+CLERK_JWKS_URL=https://...
+CLERK_SECRET_KEY=your-clerk-secret-key
 ```
 
 Production should also use:
