@@ -55,6 +55,7 @@ It includes:
 - [**API Reference**](#api-reference)
     - [Base URLs](#base-urls)
     - [Endpoint Documentation. All blueprints for backend](#endpoint-documentation-all-blueprints-for-backend)
+- [**Contribution Guide**](#contribution-guide)
 - [**License**](#license)
 <!--toc:end-->
 
@@ -230,6 +231,12 @@ Frontend runs on:
 - [Rating](./Backend/endpoint_documentation/ratings.md)
 - [Invitation](./Backend/endpoint_documentation/invitations.md)
 - [Health](./Backend/endpoint_documentation/health.md)
+
+---
+
+# **Contribution Guide**
+
+All contributions are welcome! But kindly follow the [contribution guidelines](./CONTRIBUTING.md).
 
 ---
 
