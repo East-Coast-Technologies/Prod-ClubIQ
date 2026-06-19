@@ -1,6 +1,6 @@
 # Health API
 
-This document covers the v1 backend health endpoint for ClubIQ.
+This document covers backend health and liveness endpoints for ClubIQ.
 
 ## Base URL
 
@@ -12,36 +12,26 @@ This document covers the v1 backend health endpoint for ClubIQ.
 
 No authentication is required.
 
-This endpoint is intended for:
+These endpoints are intended for:
 
 ```text
 - uptime checks
-- Docker health checks
+- Docker Compose health checks
 - deployment validation
 - monitoring systems
 ```
 
 ## Endpoints at a Glance
 
-| # | Method | Endpoint | Description |
-|---|---|---|---|
-| 1 | GET | `/api/v1/health/` | Check backend availability |
+| # | Method | Endpoint | Availability | Description |
+|---|---|---|---|---|
+| 1 | GET | `/api/v1/health` and `/api/v1/health/` | Always | v1 public health check |
+| 2 | GET | `/api/health` and `/api/health/` | Only when `EXPOSE_LEGACY_API=true` | Legacy health check |
+| 3 | GET | `/backend-health`, `/backend-health/`, `/api/backend-health`, `/api/backend-health/` | Always | Docker/backend liveness probe routes |
 
-## 1. Health Check
+## Response
 
-```http
-GET /api/v1/health/
-```
-
-### Purpose
-
-Confirms that the backend application is running and able to serve requests.
-
-### Request Headers
-
-None required.
-
-### Success Response
+All health endpoints return:
 
 Status:
 
@@ -53,9 +43,18 @@ Body:
 
 ```json
 {
+  "status": "healthy",
   "message": "It feels good up here"
 }
 ```
+
+### Purpose
+
+Confirms that the backend application is running and able to serve requests.
+
+### Request Headers
+
+None required.
 
 ### Common Errors
 
@@ -65,25 +64,31 @@ Body:
 
 ## Production Notes
 
-This endpoint should remain available even when:
+In production:
 
 ```env
 EXPOSE_LEGACY_API=false
 SCHEDULER_API_ENABLED=false
 ```
 
-The health endpoint is part of the v1 production route surface.
+With that configuration:
 
-## Monitoring Example
+- `/api/health...` (legacy) is not exposed.
+- `/api/v1/health...` remains exposed.
+- Docker liveness routes (`/api/backend-health...`, `/backend-health...`) remain exposed.
+
+## Monitoring Examples
 
 ```bash
 curl http://localhost:5000/api/v1/health/
+curl http://localhost:5000/api/backend-health
 ```
 
 Expected output:
 
 ```json
 {
+  "status": "healthy",
   "message": "It feels good up here"
 }
 ```

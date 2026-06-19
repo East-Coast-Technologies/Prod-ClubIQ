@@ -21,7 +21,7 @@
 
 # **Overview**
 
-**Club IQS** is a full-stack platform for managing clubs: members, events, attendance, authentication, and more.
+**Club IQ** is a full-stack platform for managing clubs: members, events, attendance, authentication, and more.
 
 It includes:
 
@@ -214,7 +214,7 @@ pip install -r requirements.txt
 flask run
 ```
 
-Environment variables live in `instance/.env`.
+Environment variables are read from the process environment. For Docker workflows, use `Backend/backend.env` and `Frontend/frontend.env` (see `Docker.md`).
 
 ---
 

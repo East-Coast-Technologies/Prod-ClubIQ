@@ -29,7 +29,7 @@ Before running the containers, ensure you have:
 | ------------ | -------------------------------------------------- | ------ |
 | **frontend** | Next.js development server (Clerk auth integrated) | `3000` |
 | **backend**  | Flask API (with SQLAlchemy + migrations)           | `5000` |
-| **db**       | PostgreSQL 16 (persistent volume)                  | `5432` |
+| **db**       | PostgreSQL 17 (persistent volume)                  | `5432` |
 
 ---
 
@@ -41,19 +41,19 @@ ClubIQ/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
 │   ├── requirements.txt
-│   ├── app/
-│   │   ├── models.py
-│   │   └── ...
-│   └── .env.example
+│   ├── backend.env.example
+│   └── app/
+│       ├── models.py
+│       └── ...
 │
 ├── Frontend/
 │   ├── Dockerfile
 │   ├── package.json
-│   ├── src/
-│   └── .env.example
-│ 
-├── .env.example 
-├── docker-compose.dev.yml
+│   ├── frontend.env.example
+│   └── src/
+│
+├── .env.example
+├── docker-compose.yml
 ├── Makefile
 ├── .dockerignore
 └── Docker.md
@@ -67,11 +67,11 @@ Copy and configure the example environment files:
 
 ```bash
 cp .env.example .env
-cp Backend/.env.example Backend/.env
-cp Frontend/.env.example Frontend/.env
+cp Backend/backend.env.example Backend/backend.env
+cp Frontend/frontend.env.example Frontend/frontend.env
 ```
 
-Then open the three `.env` files and replace values as needed:
+Then open the three env files and replace values as needed:
 
 **ClubIQ/.env**
 
@@ -86,7 +86,7 @@ PGADMIN_DEFAULT_EMAIL=your-pgadmin-email
 PGADMIN_DEFAULT_PASSWORD=your-pgadmin-password
 ```
 
-**Backend/.env**
+**Backend/backend.env**
 
 ```bash
 # Postgres Credentials
@@ -97,7 +97,7 @@ POSTGRES_PASSWORD=your-postgres-password
 CLERK_SECRET_KEY=your-clerk-secret-key
 ```
 
-**Frontend/.env**
+**Frontend/frontend.env**
 
 ```bash
 # Clerk Settings
@@ -152,7 +152,9 @@ docker compose exec backend flask db upgrade
 | ----------------------------------------------- | ---------------------------------------------------------------- |
 | Containers build but backend crashes on startup | Check `.env` and ensure `DATABASE_URL` matches service name `db` |
 | Frontend can’t reach API                        | Confirm `NEXT_PUBLIC_API_URL=http://localhost:5000`              |
+| Frontend marked unhealthy                       | Confirm `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is present in `Frontend/frontend.env` and loaded by Compose |
+| Backend marked unhealthy                        | Confirm `curl -f http://localhost:5000/api/backend-health` succeeds inside backend container |
 | Migrations not running                          | Run `make migrate` manually inside backend container             |
-| Database persists unwanted data                 | Run `make down` to reset Postgres volume                        |
+| Database persists unwanted data                 | Run `make down-volumes` to reset Postgres volume                |
 
 ---

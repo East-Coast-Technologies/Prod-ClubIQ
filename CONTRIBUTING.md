@@ -119,8 +119,8 @@ From the project root:
 
 ~~~bash
 cp .env.example .env
-cp Backend/.env.example Backend/.env
-cp Frontend/.env.example Frontend/.env
+cp Backend/backend.env.example Backend/backend.env
+cp Frontend/frontend.env.example Frontend/frontend.env
 
 docker compose up -d --build
 ~~~
