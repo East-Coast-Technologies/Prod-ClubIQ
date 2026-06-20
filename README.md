@@ -70,6 +70,7 @@ ClubIQ/
 │   ├── entrypoint.sh
 │   ├── requirements.txt
 │   ├── backend.env.example
+│   ├── postgres.env.example
 │   └── app/
 │       ├── models.py
 │       └── ...
@@ -193,7 +194,7 @@ flask run
 
 Environment variables are read from the process environment.
 
-For Docker workflows, use `Backend/backend.env` and `Frontend/frontend.env` (see [Docker Guide](./Docker.md)).
+For Docker workflows, use `Backend/backend.env`, `Frontend/frontend.env` and `Backend/postgres.env` (see [Docker Guide](./Docker.md)).
 
 ---
 

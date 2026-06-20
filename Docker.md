@@ -54,6 +54,7 @@ ClubIQ/
 │   ├── entrypoint.sh
 │   ├── requirements.txt
 │   ├── backend.env.example
+│   ├── postgres.env.example
 │   └── app/
 │       ├── models.py
 │       └── ...
@@ -79,9 +80,10 @@ Copy and configure the example environment files:
 ```bash
 cp Backend/backend.env.example Backend/backend.env
 cp Frontend/frontend.env.example Frontend/frontend.env
+cp Backend/postgres.env.example Backend/postgres.env
 ```
 
-Then open the two env files and replace values as needed.
+Then open the three env files and replace values as needed.
 
 ---
 
