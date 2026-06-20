@@ -68,7 +68,7 @@ services:
     networks:
       - clubiq-network
     env_file:
-      - ./Backend/backend.env
+      - ./Backend/postgres.env
     healthcheck:
       test:
         [
