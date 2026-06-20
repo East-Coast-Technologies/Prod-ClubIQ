@@ -1,5 +1,33 @@
 # Activities API
 
+<!--toc:start-->
+- [Activities API](#activities-api)
+  - [Base URL](#base-url)
+  - [Auth](#auth)
+  - [v1 Single-Club Rule](#v1-single-club-rule)
+  - [Endpoints at a Glance](#endpoints-at-a-glance)
+  - [Not Used in v1](#not-used-in-v1)
+  - [Access Control](#access-control)
+  - [1. List Activities](#1-list-activities)
+    - [Purpose](#purpose)
+    - [Request Headers](#request-headers)
+    - [Behavior](#behavior)
+    - [Success Response](#success-response)
+    - [Common Errors](#common-errors)
+  - [2. Create Activity](#2-create-activity)
+    - [Purpose](#purpose-1)
+    - [Request Headers](#request-headers-1)
+    - [Request Body](#request-body)
+    - [Required Fields](#required-fields)
+    - [Rejected Fields](#rejected-fields)
+    - [Behavior](#behavior-1)
+    - [Success Response](#success-response-1)
+    - [Error: Client Sends `club_id`](#error-client-sends-clubid)
+    - [Common Errors](#common-errors-1)
+  - [Frontend Example](#frontend-example)
+  - [Status Codes Quick Reference](#status-codes-quick-reference)
+<!--toc:end-->
+
 This document covers the v1 backend activities endpoints for ClubIQ.
 
 ## Base URL

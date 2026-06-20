@@ -1,5 +1,17 @@
 # 🐳 **ClubIQ Docker Guide**
 
+<!--toc:start-->
+- [🐳 **ClubIQ Docker Guide**](#🐳-clubiq-docker-guide)
+  - [Overview](#overview)
+  - [1. Prerequisites](#1-prerequisites)
+  - [2. Project Services](#2-project-services)
+  - [3. Directory Layout](#3-directory-layout)
+  - [4. Environment Setup](#4-environment-setup)
+  - [5. Build & Run](#5-build-run)
+  - [6. Manual Docker Commands](#6-manual-docker-commands)
+  - [7. Possible Issues](#7-possible-issues)
+<!--toc:end-->
+
 ## Overview
 
 This document explains how to build and run the **ClubIQ** Club Management System locally using Docker.
@@ -29,31 +41,31 @@ Before running the containers, ensure you have:
 | ------------ | -------------------------------------------------- | ------ |
 | **frontend** | Next.js development server (Clerk auth integrated) | `3000` |
 | **backend**  | Flask API (with SQLAlchemy + migrations)           | `5000` |
-| **db**       | PostgreSQL 16 (persistent volume)                  | `5432` |
+| **postgres**       | PostgreSQL 17 (persistent volume)                  | `5432` |
 
 ---
 
 ## 3. Directory Layout
 
-```bash
+```text
 ClubIQ/
 ├── Backend/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
 │   ├── requirements.txt
-│   ├── app/
-│   │   ├── models.py
-│   │   └── ...
-│   └── .env.example
+│   ├── backend.env.example
+│   ├── postgres.env.example
+│   └── app/
+│       ├── models.py
+│       └── ...
 │
 ├── Frontend/
 │   ├── Dockerfile
 │   ├── package.json
-│   ├── src/
-│   └── .env.example
-│ 
-├── .env.example 
-├── docker-compose.dev.yml
+│   ├── frontend.env.example
+│   └── src/
+│
+├── docker-compose.yml
 ├── Makefile
 ├── .dockerignore
 └── Docker.md
@@ -66,44 +78,12 @@ ClubIQ/
 Copy and configure the example environment files:
 
 ```bash
-cp .env.example .env
-cp Backend/.env.example Backend/.env
-cp Frontend/.env.example Frontend/.env
+cp Backend/backend.env.example Backend/backend.env
+cp Frontend/frontend.env.example Frontend/frontend.env
+cp Backend/postgres.env.example Backend/postgres.env
 ```
 
-Then open the three `.env` files and replace values as needed:
-
-**ClubIQ/.env**
-
-```bash
-# Postgres Credentials
-POSTGRES_USER=your-postgres-username
-POSTGRES_PASSWORD=your-postgres-password
-POSTGRES_DB=your-postgres-database
-
-# PgAdmin Credentials
-PGADMIN_DEFAULT_EMAIL=your-pgadmin-email
-PGADMIN_DEFAULT_PASSWORD=your-pgadmin-password
-```
-
-**Backend/.env**
-
-```bash
-# Postgres Credentials
-POSTGRES_USER=your-postgres-username
-POSTGRES_PASSWORD=your-postgres-password
-
-# Clerk Settings
-CLERK_SECRET_KEY=your-clerk-secret-key
-```
-
-**Frontend/.env**
-
-```bash
-# Clerk Settings
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
-CLERK_SECRET_KEY=your-clerk-secret-key
-```
+Then open the three env files and replace values as needed.
 
 ---
 
@@ -150,9 +130,11 @@ docker compose exec backend flask db upgrade
 
 | Problem                                         | Fix                                                              |
 | ----------------------------------------------- | ---------------------------------------------------------------- |
-| Containers build but backend crashes on startup | Check `.env` and ensure `DATABASE_URL` matches service name `db` |
-| Frontend can’t reach API                        | Confirm `NEXT_PUBLIC_API_URL=http://localhost:5000`              |
+| Containers build but backend crashes on startup | Check `Backend/backend.env` and ensure `DATABASE_URL` matches service name `postgres` |
+| Frontend can't reach API                        | Confirm `NEXT_PUBLIC_API_URL=http://localhost:5000`              |
+| Frontend marked unhealthy                       | Confirm `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is present in `Frontend/frontend.env` and loaded by Compose |
+| Backend marked unhealthy                        | Confirm `curl -f http://localhost:5000/api/backend-health` succeeds inside backend container |
 | Migrations not running                          | Run `make migrate` manually inside backend container             |
-| Database persists unwanted data                 | Run `make down` to reset Postgres volume                        |
+| Database persists unwanted data                 | Run `make down-volumes` to reset Postgres volume                |
 
 ---

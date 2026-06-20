@@ -1,22 +1,60 @@
 # Environmental variable
-.env 
+.env
+backend.env
+frontend.env
+postgres.env
+backend.env.local
+frontend.env.local
+postgres.env.local
 
-# Cache
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache
 
 # Virtual Environments
 CTenv
 venv
 .venv
+Cenv
 
 # Database
-app.db 
+app.db
 sqlite3.db
 .db
 migrations
 instance
 
-.pytest_cache
+# Logs
+logs/
+*.log
+
+# Node.js / Frontend
 node_modules/
 .next/
 club/
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite3
+
+# Migrations
+migrations
